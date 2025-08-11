@@ -1,12 +1,79 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Code, BookOpen, Sparkles } from 'lucide-react';
+import CodeTranslator from '@/components/CodeTranslator';
+import JavaScriptBasics from '@/components/JavaScriptBasics';
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState('translator');
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
+      {/* Hero Section */}
+      <div className="relative">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-r from-js-yellow/10 via-js-green/10 to-arabic-blue/10 blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-32 h-32 bg-js-yellow/20 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute bottom-20 right-1/4 w-24 h-24 bg-js-green/20 rounded-full blur-2xl animate-pulse delay-1000" />
+        
+        <div className="relative container mx-auto px-4 py-12">
+          <div className="text-center space-y-6 mb-12">
+            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">مترجم أكواد JavaScript العربي</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-js-yellow via-js-green to-arabic-blue bg-clip-text text-transparent leading-tight">
+              برمج بالعربية
+              <br />
+              نفذ بالإنجليزية
+            </h1>
+            
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              اكتب أكواد JavaScript بالعربية واحصل على الكود الإنجليزي النهائي مع كشف الأخطاء والتصحيح التلقائي
+            </p>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <div className="flex justify-center mb-8">
+              <TabsList className="grid w-full max-w-md grid-cols-2 bg-card/50 backdrop-blur-sm">
+                <TabsTrigger value="translator" className="flex items-center gap-2">
+                  <Code className="h-4 w-4" />
+                  المترجم
+                </TabsTrigger>
+                <TabsTrigger value="basics" className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4" />
+                  الأساسيات
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            <TabsContent value="translator" className="space-y-8">
+              <CodeTranslator />
+            </TabsContent>
+
+            <TabsContent value="basics" className="space-y-8">
+              <JavaScriptBasics />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
+
+      {/* Footer */}
+      <footer className="relative border-t border-border/50 bg-card/30 backdrop-blur-sm">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center space-y-4">
+            <div className="flex justify-center items-center gap-2">
+              <Code className="h-5 w-5 text-primary" />
+              <span className="font-semibold">مترجم JavaScript العربي</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              أداة متطورة لترجمة أكواد JavaScript من العربية إلى الإنجليزية مع كشف الأخطاء
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
