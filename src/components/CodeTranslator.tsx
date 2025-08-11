@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Code, AlertCircle, CheckCircle } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface TranslationError {
   line: number;
@@ -17,124 +18,221 @@ const CodeTranslator = () => {
   const [errors, setErrors] = useState<TranslationError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
 
-  // Arabic to English JavaScript keywords mapping (expanded + normalization)
-  const normalizeArabic = (s: string) => s
-    .replace(/\u0640/g, '') // remove tatweel
-    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
-    .replace(/[أإآا]/g, 'ا') // normalize alef
-    .replace(/ى/g, 'ي') // normalize alif maqsura to ya
-    .replace(/ة/g, 'ه') // normalize ta marbuta to ha (approx.)
-    .trim();
+  const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const jsKeywordsRaw: Record<string, string> = {
-    'متغير': 'let',
-    'متغيّر': 'let',
+  useEffect(() => {
+    const el = arabicTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }, [arabicCode]);
 
-    'ثابت': 'const',
+// Arabic to English JavaScript keywords mapping (expanded + normalization)
+const normalizeArabic = (s: string) => s
+  .replace(/\u0640/g, '') // remove tatweel
+  .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+  .replace(/[أإآا]/g, 'ا') // normalize alef
+  .replace(/ى/g, 'ي') // normalize alif maqsura to ya
+  .replace(/ة/g, 'ه') // normalize ta marbuta to ha (approx.)
+  .trim();
 
-    'دالة': 'function',
-    'وظيفة': 'function',
+// Find string literal ranges in a single line to avoid translating/highlighting inside them
+const getStringRanges = (line: string) => {
+  const ranges: Array<{ start: number; end: number }> = [];
+  let quote: string | null = null;
+  let start = -1;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '\\') { i++; continue; }
+    if (quote) {
+      if (ch === quote) {
+        ranges.push({ start, end: i + 1 });
+        quote = null;
+        start = -1;
+      }
+      continue;
+    }
+    if (ch === "'" || ch === '"' || ch === '`') {
+      quote = ch;
+      start = i;
+    }
+  }
+  return ranges;
+};
 
-    'إذا': 'if',
-    'لو': 'if',
+const jsKeywordsRaw: Record<string, string> = {
+  'متغير': 'let',
+  'متغيّر': 'let',
+  'دع': 'let',
 
-    'وإلا': 'else',
-    'وإلا_إذا': 'else if',
+  'ثابت': 'const',
+  'ثابته': 'const',
+  'ثوابت': 'const',
 
-    'لـ': 'for',
+  'دالة': 'function',
+  'وظيفة': 'function',
+  'وظيفه': 'function',
+  'داله': 'function',
+  'تابع': 'function',
 
-    'بينما': 'while',
-    'أثناء': 'while',
+  'إذا': 'if',
+  'لو': 'if',
+  'اذا': 'if',
+  'إذا ما': 'if',
 
-    'إرجاع': 'return',
-    'ارجاع': 'return',
-    'ارجع': 'return',
+  'وإلا': 'else',
+  'وإلا_إذا': 'else if',
+  'وإلا إذا': 'else if',
 
-    'جديد': 'new',
+  'لـ': 'for',
+  'لكل': 'for',
+  'حلقة': 'for',
+  'حلقه': 'for',
 
-    'هذا': 'this',
-    'هذه': 'this',
+  'بينما': 'while',
+  'أثناء': 'while',
 
-    'صحيح': 'true',
-    'صح': 'true',
+  'إرجاع': 'return',
+  'ارجاع': 'return',
+  'ارجع': 'return',
+  'إخراج': 'return',
 
-    'خطأ': 'false',
-    'غلط': 'false',
+  'جديد': 'new',
 
-    'فارغ': 'null',
-    'لاشيء': 'null',
+  'هذا': 'this',
+  'هذه': 'this',
 
-    'غير_محدد': 'undefined',
-    'غير محدد': 'undefined',
+  'صحيح': 'true',
+  'صح': 'true',
+  'نعم': 'true',
 
-    'طباعة': 'console.log',
-    'اطبع': 'console.log',
-    'أطبع': 'console.log',
+  'خطأ': 'false',
+  'غلط': 'false',
+  'لا': 'false',
 
-    'تنبيه': 'alert',
+  'فارغ': 'null',
+  'لاشيء': 'null',
+  'لا شيء': 'null',
+  'عدم': 'null',
 
-    'مصفوفة': 'Array',
-    'كائن': 'Object',
-    'سلسلة': 'String',
-    'نص': 'String',
-    'رقم': 'Number',
-    'منطقي': 'Boolean',
+  'غير_محدد': 'undefined',
+  'غير محدد': 'undefined',
+  'غير معرف': 'undefined',
+  'غير معرفة': 'undefined',
+  'مش معرف': 'undefined',
 
-    'تجربة': 'try',
-    'جرب': 'try',
-    'جرّب': 'try',
+  'طباعة': 'console.log',
+  'اطبع': 'console.log',
+  'أطبع': 'console.log',
+  'اكتب': 'console.log',
+  'سجل': 'console.log',
 
-    'التقاط': 'catch',
+  'تنبيه': 'alert',
+  'إنذار': 'alert',
 
-    'أخيرا': 'finally',
-    'اخيرا': 'finally',
+  'مصفوفة': 'Array',
+  'مصفوفه': 'Array',
+  'كائن': 'Object',
+  'سلسلة': 'String',
+  'سلسله': 'String',
+  'نص': 'String',
+  'نصي': 'String',
+  'رقم': 'Number',
+  'عدد': 'Number',
+  'منطقي': 'Boolean',
+  'خريطة': 'Map',
+  'مجموعة': 'Set',
+  'تاريخ': 'Date',
 
-    'رمي': 'throw',
-    'ارم': 'throw',
+  'تجربة': 'try',
+  'جرب': 'try',
+  'جرّب': 'try',
+  'حاول': 'try',
 
-    'كسر': 'break',
-    'اخرج': 'break',
+  'التقاط': 'catch',
+  'أمسك': 'catch',
 
-    'استمرار': 'continue',
-    'استمر': 'continue',
+  'أخيرا': 'finally',
+  'اخيرا': 'finally',
+  'نهائيا': 'finally',
+  'نهائيًا': 'finally',
 
-    'تبديل': 'switch',
-    'حالة': 'case',
-    'افتراضي': 'default',
+  'رمي': 'throw',
+  'ارم': 'throw',
+  'إلق': 'throw',
 
-    'فئة': 'class',
-    'صف': 'class',
+  'كسر': 'break',
+  'اخرج': 'break',
+  'إكسر': 'break',
+  'توقف': 'break',
 
-    'توسيع': 'extends',
-    'تصدير': 'export',
-    'استيراد': 'import',
-    'من': 'from',
+  'استمرار': 'continue',
+  'استمر': 'continue',
 
-    'غير_متزامن': 'async',
-    'غير متزامن': 'async',
+  'تبديل': 'switch',
+  'بدل': 'switch',
+  'التبديل': 'switch',
+  'حالة': 'case',
+  'قضية': 'case',
+  'افتراضي': 'default',
+  'افتراضيه': 'default',
 
-    'انتظار': 'await',
-    'انتظر': 'await',
+  'فئة': 'class',
+  'صف': 'class',
+  'صنف': 'class',
+  'كلاس': 'class',
 
-    'وعد': 'Promise'
-  };
+  'توسيع': 'extends',
+  'يمتد': 'extends',
+
+  'تصدير': 'export',
+  'صدّر': 'export',
+  'تصدير افتراضي': 'export default',
+
+  'استيراد': 'import',
+  'استورد': 'import',
+
+  'من': 'from',
+
+  'غير_متزامن': 'async',
+  'غير متزامن': 'async',
+  'لا متزامن': 'async',
+
+  'انتظار': 'await',
+  'انتظر': 'await',
+
+  'نوع': 'typeof',
+  'مثيل': 'instanceof',
+  'حذف': 'delete',
+
+  'وعد': 'Promise',
+  'الوعد': 'Promise'
+};
+
 
   const jsKeywords: Record<string, string> = Object.fromEntries(
     Object.entries(jsKeywordsRaw).map(([k, v]) => [normalizeArabic(k), v])
   );
-  const validateAndTranslate = (code: string) => {
-    const lines = code.split('\n');
-    const newErrors: TranslationError[] = [];
-    const translatedLines: string[] = [];
+const validateAndTranslate = (code: string) => {
+  const lines = code.split('\n');
+  const newErrors: TranslationError[] = [];
+  const translatedLines: string[] = [];
 
-    lines.forEach((line, index) => {
-      let translatedLine = line;
-      let hasError = false;
+  lines.forEach((line, index) => {
+    const stringRanges = getStringRanges(line);
 
-      // Check for basic syntax errors
-      const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
-      
-      arabicWords.forEach(word => {
+    const stripStrings = (s: string) => {
+      let out = s;
+      stringRanges.slice().reverse().forEach(r => {
+        out = out.slice(0, r.start) + ' '.repeat(r.end - r.start) + out.slice(r.end);
+      });
+      return out;
+    };
+
+    const processSegment = (seg: string) => {
+      let result = seg;
+      const arabicWords = seg.match(/[\u0600-\u06FF_]+/g) || [];
+      arabicWords.forEach((word) => {
         const cleanWord = word.trim();
         const normalized = normalizeArabic(cleanWord);
         const replacement = jsKeywords[normalized];
@@ -142,45 +240,66 @@ const CodeTranslator = () => {
         if (replacement) {
           const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const re = new RegExp(safeWord, 'g');
-          translatedLine = translatedLine.replace(re, replacement);
+          result = result.replace(re, replacement);
         } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-          // Check if it's an unknown Arabic word
-          if (!['في', 'الـ', 'الى', 'إلى', 'من', 'أن', 'هو', 'هي', 'و', 'ثم'].includes(normalized)) {
+          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
             newErrors.push({
               line: index + 1,
               message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
               word: cleanWord
             });
-            hasError = true;
           }
         }
       });
+      return result;
+    };
 
-      // Check for common syntax issues
-      if (line.includes('(') && !line.includes(')')) {
-        newErrors.push({
-          line: index + 1,
-          message: 'قوس مفتوح غير مغلق',
-          word: '('
-        });
-        hasError = true;
+    let translatedLine = '';
+    if (stringRanges.length === 0) {
+      translatedLine = processSegment(line);
+    } else {
+      let cursor = 0;
+      stringRanges.forEach((r) => {
+        const before = line.slice(cursor, r.start);
+        translatedLine += processSegment(before);
+        translatedLine += line.slice(r.start, r.end); // keep string literal intact
+        cursor = r.end;
+      });
+      if (cursor < line.length) {
+        translatedLine += processSegment(line.slice(cursor));
       }
+    }
 
-      if (line.includes('{') && !line.includes('}') && !lines.slice(index + 1).some(l => l.includes('}'))) {
-        newErrors.push({
-          line: index + 1,
-          message: 'قوس معقوف مفتوح غير مغلق',
-          word: '{'
-        });
-        hasError = true;
-      }
+    // Simple syntax checks ignoring strings
+    const lineNoStrings = stripStrings(line);
 
-      translatedLines.push(translatedLine);
-    });
+    if (lineNoStrings.includes('(') && !lineNoStrings.includes(')')) {
+      newErrors.push({
+        line: index + 1,
+        message: 'قوس مفتوح غير مغلق',
+        word: '('
+      });
+    }
 
-    setErrors(newErrors);
-    return translatedLines.join('\n');
-  };
+    if (
+      lineNoStrings.includes('{') &&
+      !lineNoStrings.includes('}') &&
+      !lines.slice(index + 1).some(l => l.includes('}'))
+    ) {
+      newErrors.push({
+        line: index + 1,
+        message: 'قوس معقوف مفتوح غير مغلق',
+        word: '{'
+      });
+    }
+
+    translatedLines.push(translatedLine);
+  });
+
+  setErrors(newErrors);
+  return translatedLines.join('\n');
+};
+
 
   const handleTranslate = () => {
     if (!arabicCode.trim()) return;
@@ -195,23 +314,35 @@ const CodeTranslator = () => {
     }, 1000);
   };
 
-  const highlightErrors = (code: string) => {
-    if (errors.length === 0) return code;
-    
-    let highlightedCode = code;
-    errors.forEach(error => {
-      const lines = highlightedCode.split('\n');
-      if (lines[error.line - 1]) {
-        lines[error.line - 1] = lines[error.line - 1].replace(
-          error.word,
-          `<span class="bg-error-red/20 text-error-red font-bold">${error.word}</span>`
-        );
-      }
-      highlightedCode = lines.join('\n');
+const highlightErrors = (code: string) => {
+  const escapeHtml = (s: string) =>
+    s.replace(/&/g, '&amp;')
+     .replace(/</g, '&lt;')
+     .replace(/>/g, '&gt;');
+
+  let highlightedCode = escapeHtml(code);
+  errors.forEach(error => {
+    const escapedWord = escapeHtml(error.word);
+    const messageAttr = (error.message || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    const span = `<span class="bg-error-red/20 text-error-red font-bold rounded px-0.5 underline decoration-error-red/50 pointer-events-auto" data-error-message='${messageAttr}'>${escapedWord}</span>`;
+    highlightedCode = highlightedCode.replace(escapedWord, span);
+  });
+
+  return highlightedCode;
+};
+
+const handleHighlighterClick = (e: React.MouseEvent) => {
+  const target = e.target as HTMLElement;
+  const el = target.closest('[data-error-message]') as HTMLElement | null;
+  if (el) {
+    const message = el.getAttribute('data-error-message') || 'خطأ غير محدد';
+    toast({
+      title: 'تفاصيل الخطأ',
+      description: message,
     });
-    
-    return highlightedCode;
-  };
+  }
+};
+
 
   return (
     <div className="grid lg:grid-cols-2 gap-6">
@@ -224,10 +355,22 @@ const CodeTranslator = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Textarea
-            value={arabicCode}
-            onChange={(e) => setArabicCode(e.target.value)}
-            placeholder="اكتب الكود بالعربية هنا...
+<div className="relative">
+  <div
+    className="absolute inset-0 z-10 pointer-events-none whitespace-pre-wrap font-mono text-right p-2 px-3 rounded-md"
+    dir="rtl"
+    onClick={handleHighlighterClick}
+    dangerouslySetInnerHTML={{ __html: highlightErrors(arabicCode) }}
+  />
+  <Textarea
+    ref={arabicTextareaRef}
+    value={arabicCode}
+    onChange={(e) => {
+      setArabicCode(e.target.value);
+      // Live validation to highlight errors as you type
+      validateAndTranslate(e.target.value);
+    }}
+    placeholder="اكتب الكود بالعربية هنا...
 
 مثال:
 متغير اسم = 'أحمد'
@@ -235,9 +378,11 @@ const CodeTranslator = () => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-            className="min-h-[300px] font-mono text-right bg-background/50 border-arabic-blue/30 focus:border-arabic-blue"
-            dir="rtl"
-          />
+    className="min-h-[300px] font-mono text-right bg-transparent border-arabic-blue/30 focus:border-arabic-blue text-transparent caret-transparent"
+    dir="rtl"
+    style={{ caretColor: 'hsl(var(--foreground))' }}
+  />
+</div>
           
           {errors.length > 0 && (
             <div className="space-y-2">
@@ -253,20 +398,29 @@ const CodeTranslator = () => {
             </div>
           )}
           
-          <Button 
-            onClick={handleTranslate} 
-            disabled={!arabicCode.trim() || isTranslating}
-            className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
-          >
-            {isTranslating ? (
-              'جاري الترجمة...'
-            ) : (
-              <>
-                ترجم إلى JavaScript
-                <ArrowRight className="mr-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
+<div className="grid grid-cols-1 gap-2">
+  <Button 
+    onClick={handleTranslate} 
+    disabled={!arabicCode.trim() || isTranslating}
+    className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
+  >
+    {isTranslating ? (
+      'جاري الترجمة...'
+    ) : (
+      <>
+        ترجم إلى JavaScript
+        <ArrowRight className="mr-2 h-4 w-4" />
+      </>
+    )}
+  </Button>
+  <Button 
+    onClick={() => navigator.clipboard.writeText(arabicCode)}
+    variant="outline"
+    className="w-full border-arabic-blue/30 hover:bg-arabic-blue/10"
+  >
+    نسخ المكتوب
+  </Button>
+</div>
         </CardContent>
       </Card>
 
