@@ -21,7 +21,7 @@ const Index = () => {
           <div className="text-center space-y-6 mb-12">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">مترجم أكواد JavaScript العربي</span>
+              <span className="text-sm font-medium">ZAS-برمجه</span>
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-js-yellow via-js-green to-arabic-blue bg-clip-text text-transparent leading-tight">
@@ -66,7 +66,7 @@ const Index = () => {
           <div className="text-center space-y-4">
             <div className="flex justify-center items-center gap-2">
               <Code className="h-5 w-5 text-primary" />
-              <span className="font-semibold">مترجم JavaScript العربي</span>
+              <span className="font-semibold">ZAS-برمجه</span>
             </div>
             <p className="text-sm text-muted-foreground">
               أداة متطورة لترجمة أكواد JavaScript من العربية إلى الإنجليزية مع كشف الأخطاء

@@ -17,49 +17,111 @@ const CodeTranslator = () => {
   const [errors, setErrors] = useState<TranslationError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
 
-  // Arabic to English JavaScript keywords mapping
-  const jsKeywords = {
+  // Arabic to English JavaScript keywords mapping (expanded + normalization)
+  const normalizeArabic = (s: string) => s
+    .replace(/\u0640/g, '') // remove tatweel
+    .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+    .replace(/[أإآا]/g, 'ا') // normalize alef
+    .replace(/ى/g, 'ي') // normalize alif maqsura to ya
+    .replace(/ة/g, 'ه') // normalize ta marbuta to ha (approx.)
+    .trim();
+
+  const jsKeywordsRaw: Record<string, string> = {
     'متغير': 'let',
+    'متغيّر': 'let',
+
     'ثابت': 'const',
+
     'دالة': 'function',
+    'وظيفة': 'function',
+
     'إذا': 'if',
+    'لو': 'if',
+
     'وإلا': 'else',
     'وإلا_إذا': 'else if',
+
     'لـ': 'for',
+
     'بينما': 'while',
+    'أثناء': 'while',
+
     'إرجاع': 'return',
+    'ارجاع': 'return',
+    'ارجع': 'return',
+
     'جديد': 'new',
+
     'هذا': 'this',
+    'هذه': 'this',
+
     'صحيح': 'true',
+    'صح': 'true',
+
     'خطأ': 'false',
+    'غلط': 'false',
+
     'فارغ': 'null',
+    'لاشيء': 'null',
+
     'غير_محدد': 'undefined',
+    'غير محدد': 'undefined',
+
     'طباعة': 'console.log',
+    'اطبع': 'console.log',
+    'أطبع': 'console.log',
+
     'تنبيه': 'alert',
+
     'مصفوفة': 'Array',
     'كائن': 'Object',
     'سلسلة': 'String',
+    'نص': 'String',
     'رقم': 'Number',
     'منطقي': 'Boolean',
+
     'تجربة': 'try',
+    'جرب': 'try',
+    'جرّب': 'try',
+
     'التقاط': 'catch',
+
     'أخيرا': 'finally',
+    'اخيرا': 'finally',
+
     'رمي': 'throw',
+    'ارم': 'throw',
+
     'كسر': 'break',
+    'اخرج': 'break',
+
     'استمرار': 'continue',
+    'استمر': 'continue',
+
     'تبديل': 'switch',
     'حالة': 'case',
     'افتراضي': 'default',
+
     'فئة': 'class',
+    'صف': 'class',
+
     'توسيع': 'extends',
     'تصدير': 'export',
     'استيراد': 'import',
     'من': 'from',
+
     'غير_متزامن': 'async',
+    'غير متزامن': 'async',
+
     'انتظار': 'await',
+    'انتظر': 'await',
+
     'وعد': 'Promise'
   };
 
+  const jsKeywords: Record<string, string> = Object.fromEntries(
+    Object.entries(jsKeywordsRaw).map(([k, v]) => [normalizeArabic(k), v])
+  );
   const validateAndTranslate = (code: string) => {
     const lines = code.split('\n');
     const newErrors: TranslationError[] = [];
@@ -74,12 +136,16 @@ const CodeTranslator = () => {
       
       arabicWords.forEach(word => {
         const cleanWord = word.trim();
-        
-        if (jsKeywords[cleanWord]) {
-          translatedLine = translatedLine.replace(cleanWord, jsKeywords[cleanWord]);
+        const normalized = normalizeArabic(cleanWord);
+        const replacement = jsKeywords[normalized];
+
+        if (replacement) {
+          const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const re = new RegExp(safeWord, 'g');
+          translatedLine = translatedLine.replace(re, replacement);
         } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
           // Check if it's an unknown Arabic word
-          if (!['في', 'الـ', 'إلى', 'من', 'أن', 'هو', 'هي'].includes(cleanWord)) {
+          if (!['في', 'الـ', 'الى', 'إلى', 'من', 'أن', 'هو', 'هي', 'و', 'ثم'].includes(normalized)) {
             newErrors.push({
               line: index + 1,
               message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
