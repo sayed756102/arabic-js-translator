@@ -19,6 +19,7 @@ const CodeTranslator = () => {
   const [isTranslating, setIsTranslating] = useState(false);
 
   const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const el = arabicTextareaRef.current;
@@ -221,7 +222,20 @@ const jsKeywordsRaw: Record<string, string> = {
   'خصم': '-',
   'إنقاص': '-',
   'انقاص': '-',
-  'سالب': '-'
+  'سالب': '-',
+
+  // Multiplication
+  'ضرب': '*',
+  'الضرب': '*',
+  '×': '*',
+  '✕': '*',
+
+  // Division
+  'قسمة': '/',
+  'قسمه': '/',
+  'القسمة': '/',
+  'القسمه': '/',
+  '÷': '/'
 };
 
 
@@ -380,7 +394,7 @@ const highlightErrors = (code: string) => {
     merged.forEach(m => {
       if (cursor < m.start) out += escapeHtml(line.slice(cursor, m.start));
       const rawWord = line.slice(m.start, m.end);
-      out += `<span class="bg-error-red/20 text-error-red font-bold rounded px-0.5 underline decoration-error-red/50 pointer-events-auto cursor-help" data-error-message='${escapeAttr(m.message)}'>${escapeHtml(rawWord)}</span>`;
+      out += `<span class="bg-error-red/20 text-error-red rounded-sm box-decoration-clone cursor-help" data-error-message='${escapeAttr(m.message)}'>${escapeHtml(rawWord)}</span>`;
       cursor = m.end;
     });
 
@@ -392,10 +406,15 @@ const highlightErrors = (code: string) => {
 };
 
 const handleHighlighterClick = (e: React.MouseEvent) => {
-  const target = e.target as HTMLElement;
-  const el = target.closest('[data-error-message]') as HTMLElement | null;
-  if (el) {
-    const message = el.getAttribute('data-error-message') || 'خطأ غير محدد';
+  const ov = overlayRef.current;
+  if (!ov) return;
+  const prev = ov.style.pointerEvents;
+  ov.style.pointerEvents = 'auto';
+  const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
+  ov.style.pointerEvents = prev || 'none';
+  const hit = el?.closest('[data-error-message]') as HTMLElement | null;
+  if (hit) {
+    const message = hit.getAttribute('data-error-message') || 'خطأ غير محدد';
     toast({
       title: 'تفاصيل الخطأ',
       description: message,
@@ -417,6 +436,7 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
         <CardContent className="space-y-4">
 <div className="relative" onClick={handleHighlighterClick}>
   <div
+    ref={overlayRef}
     className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-right text-sm leading-6 px-3 py-2 rounded-md pointer-events-none"
     dir="rtl"
     dangerouslySetInnerHTML={{ __html: highlightErrors(arabicCode) }}
