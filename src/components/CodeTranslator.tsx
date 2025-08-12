@@ -206,7 +206,22 @@ const jsKeywordsRaw: Record<string, string> = {
   'حذف': 'delete',
 
   'وعد': 'Promise',
-  'الوعد': 'Promise'
+  'الوعد': 'Promise',
+
+  // Arithmetic operators (Arabic words -> JS symbols)
+  'جمع': '+',
+  'زائد': '+',
+  'زايد': '+',
+  'زيادة': '+',
+  'اضافة': '+',
+  'إضافة': '+',
+
+  'طرح': '-',
+  'ناقص': '-',
+  'خصم': '-',
+  'إنقاص': '-',
+  'انقاص': '-',
+  'سالب': '-'
 };
 
 
@@ -400,19 +415,10 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-<div className="relative">
+<div className="relative" onClick={handleHighlighterClick}>
   <div
-    className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-right p-2 px-3 rounded-md"
+    className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-right text-sm leading-6 px-3 py-2 rounded-md pointer-events-none"
     dir="rtl"
-    onMouseDown={(e) => {
-      const t = e.target as HTMLElement;
-      const hit = t.closest('[data-error-message]');
-      if (!hit) {
-        e.preventDefault();
-        arabicTextareaRef.current?.focus();
-      }
-    }}
-    onClick={handleHighlighterClick}
     dangerouslySetInnerHTML={{ __html: highlightErrors(arabicCode) }}
   />
   <Textarea
@@ -431,7 +437,7 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-    className="min-h-[300px] font-mono text-right bg-transparent border-arabic-blue/30 focus:border-arabic-blue text-transparent caret-transparent"
+    className="min-h-[300px] font-mono text-right bg-transparent border-arabic-blue/30 focus:border-arabic-blue text-transparent caret-transparent px-3 py-2 text-sm leading-6 resize-none overflow-hidden"
     dir="rtl"
     style={{ caretColor: 'hsl(var(--foreground))' }}
   />
@@ -467,7 +473,10 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
     )}
   </Button>
   <Button 
-    onClick={() => navigator.clipboard.writeText(arabicCode)}
+    onClick={() => {
+      navigator.clipboard.writeText(arabicCode);
+      toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
+    }}
     variant="outline"
     className="w-full border-arabic-blue/30 hover:bg-arabic-blue/10"
   >
@@ -501,13 +510,16 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
                   </Badge>
                 )}
               </div>
-              <Button 
-                onClick={() => navigator.clipboard.writeText(translatedCode)}
-                variant="outline"
-                className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
-              >
-                نسخ الناتج النهائي
-              </Button>
+  <Button 
+    onClick={() => {
+      navigator.clipboard.writeText(translatedCode);
+      toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
+    }}
+    variant="outline"
+    className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
+  >
+    نسخ الناتج النهائي
+  </Button>
             </div>
           ) : (
             <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">
