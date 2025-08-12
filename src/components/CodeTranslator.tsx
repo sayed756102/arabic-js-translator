@@ -320,15 +320,60 @@ const highlightErrors = (code: string) => {
      .replace(/</g, '&lt;')
      .replace(/>/g, '&gt;');
 
-  let highlightedCode = escapeHtml(code);
-  errors.forEach(error => {
-    const escapedWord = escapeHtml(error.word);
-    const messageAttr = (error.message || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-    const span = `<span class="bg-error-red/20 text-error-red font-bold rounded px-0.5 underline decoration-error-red/50 pointer-events-auto" data-error-message='${messageAttr}'>${escapedWord}</span>`;
-    highlightedCode = highlightedCode.replace(escapedWord, span);
+  const lines = code.split('\n');
+
+  const isInRanges = (idx: number, ranges: Array<{ start: number; end: number }>) =>
+    ranges.some(r => idx >= r.start && idx < r.end);
+
+  const resultLines = lines.map((line, i) => {
+    const lineIndex = i + 1;
+    const lineErrors = errors.filter(e => e.line === lineIndex);
+    if (lineErrors.length === 0) return escapeHtml(line);
+
+    const ranges = getStringRanges(line);
+    type Marker = { start: number; end: number; message: string };
+    const markers: Marker[] = [];
+
+    const addMarkersForWord = (word: string, message: string) => {
+      if (!word) return;
+      let from = 0;
+      while (from < line.length) {
+        const at = line.indexOf(word, from);
+        if (at === -1) break;
+        const end = at + word.length;
+        if (!isInRanges(at, ranges)) {
+          markers.push({ start: at, end, message });
+        }
+        from = end;
+      }
+    };
+
+    lineErrors.forEach(err => addMarkersForWord(err.word, err.message));
+
+    // Sort and de-duplicate overlapping markers
+    markers.sort((a, b) => a.start - b.start);
+    const merged: Marker[] = [];
+    markers.forEach(m => {
+      const last = merged[merged.length - 1];
+      if (!last || m.start >= last.end) merged.push(m);
+    });
+
+    let out = '';
+    let cursor = 0;
+    const escapeAttr = (s: string) => (s || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+
+    merged.forEach(m => {
+      if (cursor < m.start) out += escapeHtml(line.slice(cursor, m.start));
+      const rawWord = line.slice(m.start, m.end);
+      out += `<span class="bg-error-red/20 text-error-red font-bold rounded px-0.5 underline decoration-error-red/50 pointer-events-auto cursor-help" data-error-message='${escapeAttr(m.message)}'>${escapeHtml(rawWord)}</span>`;
+      cursor = m.end;
+    });
+
+    if (cursor < line.length) out += escapeHtml(line.slice(cursor));
+    return out;
   });
 
-  return highlightedCode;
+  return resultLines.join('\n');
 };
 
 const handleHighlighterClick = (e: React.MouseEvent) => {
@@ -357,8 +402,16 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
         <CardContent className="space-y-4">
 <div className="relative">
   <div
-    className="absolute inset-0 z-10 pointer-events-none whitespace-pre-wrap font-mono text-right p-2 px-3 rounded-md"
+    className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-right p-2 px-3 rounded-md"
     dir="rtl"
+    onMouseDown={(e) => {
+      const t = e.target as HTMLElement;
+      const hit = t.closest('[data-error-message]');
+      if (!hit) {
+        e.preventDefault();
+        arabicTextareaRef.current?.focus();
+      }
+    }}
     onClick={handleHighlighterClick}
     dangerouslySetInnerHTML={{ __html: highlightErrors(arabicCode) }}
   />
@@ -453,7 +506,7 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
                 variant="outline"
                 className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
               >
-                نسخ الكود
+                نسخ الناتج النهائي
               </Button>
             </div>
           ) : (

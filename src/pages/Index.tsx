@@ -4,14 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Code, BookOpen, Sparkles } from 'lucide-react';
 import CodeTranslator from '@/components/CodeTranslator';
 import JavaScriptBasics from '@/components/JavaScriptBasics';
-
+import Header from '@/components/Header';
+ 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('translator');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
+      <Header />
       {/* Hero Section */}
-      <div className="relative">
+      <div id="purpose" className="relative">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-r from-js-yellow/10 via-js-green/10 to-arabic-blue/10 blur-3xl" />
         <div className="absolute top-20 left-1/4 w-32 h-32 bg-js-yellow/20 rounded-full blur-2xl animate-pulse" />
@@ -59,6 +61,17 @@ const Index = () => {
           </Tabs>
         </div>
       </div>
+
+      {/* Policy Section */}
+      <section id="policy" className="container mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto text-right space-y-3">
+          <h2 className="text-2xl font-semibold">سياسة المستخدم</h2>
+          <p className="text-muted-foreground">
+            يهدف ZAS-برمجه إلى تسهيل كتابة أكواد JavaScript بالعربية وترجمتها للإنجليزية مع إبراز الأخطاء لتعلمٍ أسرع.
+            لا نقوم بحفظ محتواك على خادم خارجي ضمن هذا الإصدار. تواصل عبر البريد للإبلاغ عن أي مشكلة.
+          </p>
+        </div>
+      </section>
 
       {/* Footer */}
       <footer className="relative border-t border-border/50 bg-card/30 backdrop-blur-sm">
