@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Code, BookOpen } from 'lucide-react';
@@ -8,10 +9,34 @@ import Header from '@/components/Header';
  
 const Index = () => {
   const [activeTab, setActiveTab] = useState('translator');
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "ZAS-برمجه",
+          url: `${siteUrl}/`,
+          description: "ZAS-برمجه: أداة لترجمة أكواد JavaScript من العربية إلى الإنجليزية مع كشف الأخطاء والتصحيح التلقائي",
+          inLanguage: "ar",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: `${siteUrl}/?q={search_term_string}`,
+            "query-input": "required name=search_term_string"
+          }
+        })}</script>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "ZAS-برمجه",
+          url: `${siteUrl}/`,
+          logo: `${siteUrl}/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png`
+        })}</script>
+      </Helmet>
       <Header />
+      <main role="main">
       {/* Hero Section */}
       <div id="purpose" className="relative">
         {/* Background Effects */}
@@ -72,6 +97,8 @@ const Index = () => {
           </p>
         </div>
       </section>
+
+      </main>
 
       {/* Footer */}
       <footer className="relative border-t border-border/50 bg-card/30 backdrop-blur-sm">
