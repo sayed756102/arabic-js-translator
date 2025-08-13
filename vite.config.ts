@@ -15,9 +15,9 @@ export default defineConfig(({ mode }) => ({
     componentTagger(),
   ].filter(Boolean),
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-      react: path.resolve(__dirname, "./src/react-shim.js"),
-    },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "./src") },
+      { find: /^react$/, replacement: path.resolve(__dirname, "./src/react-shim.js") },
+    ],
   },
 }));
