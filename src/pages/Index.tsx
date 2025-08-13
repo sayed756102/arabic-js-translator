@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Code, BookOpen, Sparkles } from 'lucide-react';
+import { Code, BookOpen } from 'lucide-react';
 import CodeTranslator from '@/components/CodeTranslator';
 import JavaScriptBasics from '@/components/JavaScriptBasics';
 import Header from '@/components/Header';
@@ -22,7 +22,7 @@ const Index = () => {
         <div className="relative container mx-auto px-4 py-12">
           <div className="text-center space-y-6 mb-12">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
-              <Sparkles className="h-4 w-4 text-primary" />
+              <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-5 w-5 rounded-sm" loading="lazy" />
               <span className="text-sm font-medium">ZAS-برمجه</span>
             </div>
             
@@ -78,7 +78,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-4">
             <div className="flex justify-center items-center gap-2">
-              <Code className="h-5 w-5 text-primary" />
+              <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
               <span className="font-semibold">ZAS-برمجه</span>
             </div>
             <p className="text-sm text-muted-foreground">
