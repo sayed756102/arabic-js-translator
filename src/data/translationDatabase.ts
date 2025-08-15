@@ -1,68 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Code, AlertCircle, CheckCircle } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-
-interface TranslationError {
-  line: number;
-  message: string;
-  word: string;
-}
-
-const CodeTranslator = () => {
-  const [arabicCode, setArabicCode] = useState('');
-  const [translatedCode, setTranslatedCode] = useState('');
-  const [errors, setErrors] = useState<TranslationError[]>([]);
-  const [isTranslating, setIsTranslating] = useState(false);
-
-  const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const overlayRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const el = arabicTextareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  }, [arabicCode]);
-
-// Arabic to English JavaScript keywords mapping (expanded + normalization)
-const normalizeArabic = (s: string) => s
-  .replace(/\u0640/g, '') // remove tatweel
-  .replace(/[\u064B-\u065F]/g, '') // remove diacritics
-  .replace(/[أإآا]/g, 'ا') // normalize alef
-  .replace(/ى/g, 'ي') // normalize alif maqsura to ya
-  .replace(/ة/g, 'ه') // normalize ta marbuta to ha (approx.)
-  .trim();
-
-// Find string literal ranges in a single line to avoid translating/highlighting inside them
-const getStringRanges = (line: string) => {
-  const ranges: Array<{ start: number; end: number }> = [];
-  let quote: string | null = null;
-  let start = -1;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '\\') { i++; continue; }
-    if (quote) {
-      if (ch === quote) {
-        ranges.push({ start, end: i + 1 });
-        quote = null;
-        start = -1;
-      }
-      continue;
-    }
-    if (ch === "'" || ch === '"' || ch === '`') {
-      quote = ch;
-      start = i;
-    }
-  }
-  return ranges;
-};
-
-const jsKeywordsRaw: Record<string, string> = {
-  // Basic keywords
+// قاعدة بيانات الترجمة الشاملة من العربية إلى الإنجليزية
+export const translationDatabase: Record<string, string> = {
+  // Basic programming keywords
   'متغير': 'let',
   'متغيّر': 'let',
   'دع': 'let',
@@ -413,45 +351,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'سحب': 'pop',
   'إزاحة': 'shift',
 
-  // E-commerce specific
-  'منتج': 'product',
-  'سلعة': 'goods',
-  'ماركة': 'brand',
-  'علامة تجارية': 'trademark',
-  'سعر': 'price',
-  'مخزون': 'stock',
-  'وصف': 'description',
-  'تفاصيل': 'details',
-  'مراجعة': 'review',
-  'تقييم': 'rating',
-  'صورة': 'image',
-  'لقطة': 'snapshot',
-  'عربة التسوق': 'cart',
-  'سلة': 'basket',
-  'إتمام الشراء': 'checkout',
-  'طلبية': 'order',
-  'شحن': 'shipment',
-  'توصيل': 'delivery',
-  'تسليم': 'handover',
-  'كوبون': 'coupon',
-  'قسيمة': 'voucher',
-  'ملف شخصي': 'profile',
-  'اشتراك': 'register',
-  'بطاقة ائتمانية': 'credit card',
-  'تأكيد': 'confirmation',
-  'فاتورة': 'invoice',
-  'إيصال': 'receipt',
-  'توفر': 'availability',
-  'في انتظار': 'pending',
-  'تم شحنه': 'shipped',
-  'تم توصيله': 'delivered',
-  'ملغى': 'cancelled',
-  'استرجاع الأموال': 'refund',
-  'ضريبة': 'tax',
-  'رسوم الشحن': 'shipping fee',
-  'بريد إلكتروني': 'email',
-
-  // أساسيات وكلمات شائعة
+  // Common words and basics
   'العالم': 'world',
   'البيت': 'house',
   'المنزل': 'home',
@@ -490,7 +390,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الزميل': 'colleague',
   'الشريك': 'partner',
 
-  // الألوان
+  // Colors
   'أحمر': 'red',
   'أزرق': 'blue',
   'أخضر': 'green',
@@ -510,7 +410,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'أحمر داكن': 'dark red',
   'رمادي فاتح': 'light gray',
 
-  // الأرقام والوقت
+  // Numbers and time
   'صفر': 'zero',
   'واحد': 'one',
   'اثنان': 'two',
@@ -538,10 +438,9 @@ const jsKeywordsRaw: Record<string, string> = {
   'التوقيت': 'timing',
   'المواعيد': 'appointments',
   'الموعد': 'appointment',
-  'التاريخ': 'date',
   'التقويم': 'calendar',
 
-  // أيام الأسبوع
+  // Days of the week
   'الأحد': 'Sunday',
   'الاثنين': 'Monday',
   'الثلاثاء': 'Tuesday',
@@ -550,7 +449,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الجمعة': 'Friday',
   'السبت': 'Saturday',
 
-  // الشهور
+  // Months
   'يناير': 'January',
   'فبراير': 'February',
   'مارس': 'March',
@@ -564,13 +463,13 @@ const jsKeywordsRaw: Record<string, string> = {
   'نوفمبر': 'November',
   'ديسمبر': 'December',
 
-  // الفصول
+  // Seasons
   'الربيع': 'spring',
   'الصيف': 'summer',
   'الخريف': 'autumn',
   'الشتاء': 'winter',
 
-  // الطعام والشراب
+  // Food and drink
   'الطعام': 'food',
   'الأكل': 'meal',
   'الوجبة': 'meal',
@@ -607,7 +506,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الزيت': 'oil',
   'الخل': 'vinegar',
 
-  // المدرسة والتعليم
+  // School and education
   'المدرسة': 'school',
   'الجامعة': 'university',
   'الكلية': 'college',
@@ -616,7 +515,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'الطلاب': 'students',
   'المعلم': 'teacher',
   'الأستاذ': 'professor',
-  'المدير': 'principal',
   'الكتاب': 'book',
   'الكتب': 'books',
   'الدرس': 'lesson',
@@ -638,14 +536,13 @@ const jsKeywordsRaw: Record<string, string> = {
   'الحساب': 'mathematics',
   'الرياضيات': 'mathematics',
   'العلوم': 'science',
-  'التاريخ': 'history',
   'الجغرافيا': 'geography',
   'اللغة': 'language',
   'الأدب': 'literature',
   'الشعر': 'poetry',
   'القصة': 'story',
 
-  // العمل والمهن
+  // Work and professions
   'العمل': 'work',
   'الوظيفة': 'job',
   'المهنة': 'profession',
@@ -657,7 +554,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'السوق': 'market',
   'البنك': 'bank',
   'المستشفى': 'hospital',
-  'الطبيب': 'doctor',
   'الممرض': 'nurse',
   'المهندس': 'engineer',
   'المحامي': 'lawyer',
@@ -670,7 +566,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'النادل': 'waiter',
   'البائع': 'seller',
   'المشتري': 'buyer',
-  'المدير': 'manager',
   'الموظف': 'employee',
   'العامل': 'worker',
   'المبرمج': 'programmer',
@@ -685,7 +580,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الممثل': 'actor',
   'الراقص': 'dancer',
 
-  // المواصلات والسفر
+  // Transportation and travel
   'السيارة': 'car',
   'الحافلة': 'bus',
   'القطار': 'train',
@@ -698,8 +593,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'المطار': 'airport',
   'المحطة': 'station',
   'الميناء': 'port',
-  'الطريق': 'road',
-  'الشارع': 'street',
   'الجسر': 'bridge',
   'النفق': 'tunnel',
   'إشارة المرور': 'traffic light',
@@ -724,7 +617,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الصحراء': 'desert',
   'الغابة': 'forest',
 
-  // الجسم والصحة
+  // Body and health
   'الجسم': 'body',
   'الرأس': 'head',
   'الوجه': 'face',
@@ -744,23 +637,17 @@ const jsKeywordsRaw: Record<string, string> = {
   'اليد': 'hand',
   'الذراع': 'arm',
   'الأصابع': 'fingers',
-  'الرجل': 'leg',
   'القدم': 'foot',
   'الركبة': 'knee',
   'القلب': 'heart',
   'الدماغ': 'brain',
   'الدم': 'blood',
-  'الصحة': 'health',
   'المرض': 'disease',
-  'الألم': 'pain',
   'الدواء': 'medicine',
-  'العلاج': 'treatment',
-  'الطبيب': 'doctor',
-  'المستشفى': 'hospital',
   'العيادة': 'clinic',
   'الصيدلية': 'pharmacy',
 
-  // الملابس
+  // Clothing
   'الملابس': 'clothes',
   'القميص': 'shirt',
   'البنطال': 'pants',
@@ -773,14 +660,13 @@ const jsKeywordsRaw: Record<string, string> = {
   'القبعة': 'hat',
   'النظارة': 'glasses',
   'النظارات الشمسية': 'sunglasses',
-  'الساعة': 'watch',
   'الخاتم': 'ring',
   'القلادة': 'necklace',
   'الأقراط': 'earrings',
   'الحقيبة': 'bag',
   'المحفظة': 'wallet',
 
-  // الطقس والطبيعة
+  // Weather and nature
   'الطقس': 'weather',
   'المطر': 'rain',
   'الشمس': 'sun',
@@ -811,7 +697,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الجذور': 'roots',
   'الفروع': 'branches',
 
-  // الحيوانات
+  // Animals
   'الحيوان': 'animal',
   'الحيوانات': 'animals',
   'الكلب': 'dog',
@@ -854,7 +740,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'الفراشة': 'butterfly',
   'العنكبوت': 'spider',
 
-  // الرياضة والألعاب
+  // Sports and games
   'الرياضة': 'sport',
   'كرة القدم': 'football',
   'كرة السلة': 'basketball',
@@ -867,14 +753,12 @@ const jsKeywordsRaw: Record<string, string> = {
   'اليوغا': 'yoga',
   'التمارين': 'exercises',
   'اللياقة': 'fitness',
-  'النشاط': 'activity',
   'اللعبة': 'game',
   'الألعاب': 'games',
   'الشطرنج': 'chess',
   'الورق': 'cards',
   'النرد': 'dice',
   'الألغاز': 'puzzles',
-  'الفريق': 'team',
   'اللاعب': 'player',
   'المدرب': 'coach',
   'المباراة': 'match',
@@ -885,9 +769,8 @@ const jsKeywordsRaw: Record<string, string> = {
   'التعادل': 'tie',
   'النقاط': 'points',
   'النتيجة': 'score',
-  'الهدف': 'goal',
 
-  // الموسيقى والفنون
+  // Music and arts
   'الموسيقى': 'music',
   'الأغنية': 'song',
   'الألحان': 'melodies',
@@ -899,8 +782,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'الكمان': 'violin',
   'الطبل': 'drum',
   'الناي': 'flute',
-  'المغني': 'singer',
-  'الموسيقي': 'musician',
   'الفرقة': 'band',
   'الحفلة': 'concert',
   'الفن': 'art',
@@ -909,13 +790,10 @@ const jsKeywordsRaw: Record<string, string> = {
   'النحت': 'sculpture',
   'التصوير': 'photography',
   'المعرض': 'exhibition',
-  'المتحف': 'museum',
-  'الفنان': 'artist',
   'الرسام': 'painter',
   'النحات': 'sculptor',
-  'المصور': 'photographer',
 
-  // التكنولوجيا والإنترنت
+  // Technology and internet
   'التكنولوجيا': 'technology',
   'الكمبيوتر': 'computer',
   'الحاسوب': 'computer',
@@ -929,31 +807,18 @@ const jsKeywordsRaw: Record<string, string> = {
   'الموقع': 'website',
   'المدونة': 'blog',
   'المنتدى': 'forum',
-  'التطبيق': 'application',
-  'البرنامج': 'program',
   'البرمجيات': 'software',
-  'النظام': 'system',
-  'قاعدة البيانات': 'database',
   'الخادم': 'server',
-  'الشبكة': 'network',
   'الأمان': 'security',
-  'كلمة المرور': 'password',
-  'الحساب': 'account',
-  'تسجيل الدخول': 'login',
-  'تسجيل الخروج': 'logout',
-  'البحث': 'search',
   'التنزيل': 'download',
   'الرفع': 'upload',
   'المشاركة': 'sharing',
-  'الرسالة': 'message',
   'الإيميل': 'email',
   'الدردشة': 'chat',
   'الفيديو': 'video',
   'الصوت': 'audio',
-  'الصورة': 'image',
-  'المحتوى': 'content',
 
-  // المشاعر والصفات
+  // Emotions and adjectives
   'سعيد': 'happy',
   'حزين': 'sad',
   'غاضب': 'angry',
@@ -985,7 +850,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'بطيء': 'slow',
   'كبير': 'big',
   'صغير': 'small',
-  'جديد': 'new',
   'قديم': 'old',
   'نظيف': 'clean',
   'قذر': 'dirty',
@@ -1002,12 +866,10 @@ const jsKeywordsRaw: Record<string, string> = {
   'سهل': 'easy',
   'محظوظ': 'lucky',
   'منحوس': 'unlucky',
-  'صحيح': 'correct',
-  'خطأ': 'wrong',
   'مفيد': 'useful',
   'عديم الفائدة': 'useless',
 
-  // الأفعال الشائعة
+  // Common verbs
   'يأكل': 'eat',
   'يشرب': 'drink',
   'ينام': 'sleep',
@@ -1063,7 +925,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'يصل': 'arrive',
   'يغادر': 'leave',
   'يعود': 'return',
-  'يبقى': 'stay',
   'يقف': 'stand',
   'يجلس': 'sit',
   'يستلقي': 'lie down',
@@ -1076,9 +937,8 @@ const jsKeywordsRaw: Record<string, string> = {
   'يحدث': 'happen',
   'يصبح': 'become',
   'يبدو': 'seem',
-  'يبقى': 'remain',
 
-  // كلمات الربط والضمائر
+  // Pronouns and linking words
   'أنا': 'I',
   'أنت': 'you',
   'هو': 'he',
@@ -1091,8 +951,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'لها': 'her',
   'لنا': 'our',
   'لهم': 'their',
-  'هذا': 'this',
-  'هذه': 'this',
   'ذلك': 'that',
   'تلك': 'that',
   'هنا': 'here',
@@ -1102,7 +960,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'كيف': 'how',
   'لماذا': 'why',
   'ماذا': 'what',
-  'من': 'who',
   'أي': 'which',
   'كم': 'how many',
   'لكن': 'but',
@@ -1110,12 +967,9 @@ const jsKeywordsRaw: Record<string, string> = {
   'إذن': 'then',
   'لذلك': 'therefore',
   'لأن': 'because',
-  'إذا': 'if',
   'عندما': 'when',
-  'بينما': 'while',
   'بعد': 'after',
   'قبل': 'before',
-  'أثناء': 'during',
   'مع': 'with',
   'بدون': 'without',
   'ضد': 'against',
@@ -1136,7 +990,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'شرق': 'east',
   'غرب': 'west',
 
-  // المال والأعمال
+  // Money and business
   'المال': 'money',
   'الأموال': 'funds',
   'النقود': 'cash',
@@ -1147,7 +1001,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'الدرهم': 'dirham',
   'الريال': 'riyal',
   'العملة': 'currency',
-  'السعر': 'price',
   'التكلفة': 'cost',
   'الراتب': 'salary',
   'الأجر': 'wage',
@@ -1160,7 +1013,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'البيع': 'selling',
   'التجارة': 'trade',
   'الأعمال': 'business',
-  'الشركة': 'company',
   'المؤسسة': 'institution',
   'المنظمة': 'organization',
   'الصناعة': 'industry',
@@ -1171,22 +1023,18 @@ const jsKeywordsRaw: Record<string, string> = {
   'الاتفاقية': 'agreement',
   'الصفقة': 'deal',
 
-  // كلمات إضافية متنوعة
+  // Miscellaneous useful words
   'المشكلة': 'problem',
   'الحل': 'solution',
   'الطريقة': 'method',
   'الوسيلة': 'means',
-  'الهدف': 'goal',
   'الغرض': 'purpose',
   'السبب': 'reason',
-  'النتيجة': 'result',
   'التأثير': 'effect',
   'التغيير': 'change',
   'التطوير': 'development',
   'التحسين': 'improvement',
   'التقدم': 'progress',
-  'النجاح': 'success',
-  'الفشل': 'failure',
   'المحاولة': 'attempt',
   'التجربة': 'experiment',
   'الخبرة': 'experience',
@@ -1209,13 +1057,11 @@ const jsKeywordsRaw: Record<string, string> = {
   'الخطة': 'plan',
   'المشروع': 'project',
   'المهمة': 'task',
-  'الواجب': 'duty',
   'المسؤولية': 'responsibility',
   'الحق': 'right',
   'العدالة': 'justice',
   'القانون': 'law',
   'القاعدة': 'rule',
-  'النظام': 'system',
   'الترتيب': 'order',
   'التنظيم': 'organization',
   'الإدارة': 'management',
@@ -1226,12 +1072,10 @@ const jsKeywordsRaw: Record<string, string> = {
   'السيطرة': 'control',
   'الحرية': 'freedom',
   'الاستقلال': 'independence',
-  'الأمان': 'safety',
   'الحماية': 'protection',
   'الخطر': 'danger',
   'المخاطرة': 'risk',
   'التهديد': 'threat',
-  'المشكلة': 'problem',
   'الأزمة': 'crisis',
   'الكارثة': 'disaster',
   'الحادث': 'accident',
@@ -1256,8 +1100,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'المدينة': 'city',
   'القرية': 'village',
   'الحي': 'neighborhood',
-  'الشارع': 'street',
-  'الطريق': 'road',
   'المسافة': 'distance',
   'القرب': 'closeness',
   'البعد': 'remoteness',
@@ -1266,15 +1108,8 @@ const jsKeywordsRaw: Record<string, string> = {
   'الحركة': 'movement',
   'السكون': 'stillness',
   'الراحة': 'rest',
-  'النشاط': 'activity',
   'الطاقة': 'energy',
-  'القوة': 'strength',
-  'الضعف': 'weakness',
-  'الصحة': 'health',
-  'المرض': 'illness',
-  'العلاج': 'treatment',
   'الشفاء': 'recovery',
-  'الألم': 'pain',
   'المعاناة': 'suffering',
   'السعادة': 'happiness',
   'الفرح': 'joy',
@@ -1293,7 +1128,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'المساعدة': 'help',
   'الدعم': 'support',
   'المساندة': 'assistance',
-  'الخدمة': 'service',
   'الفائدة': 'benefit',
   'الضرر': 'harm',
   'الأذى': 'damage',
@@ -1311,12 +1145,10 @@ const jsKeywordsRaw: Record<string, string> = {
   'الرغبة': 'desire',
   'الإرادة': 'will',
   'النية': 'intention',
-  'الهدف': 'objective',
   'الغاية': 'purpose',
   'المعنى': 'meaning',
   'المغزى': 'significance',
   'الأهمية': 'importance',
-  'القيمة': 'value',
   'الجودة': 'quality',
   'الكمية': 'quantity',
   'الحجم': 'size',
@@ -1329,14 +1161,11 @@ const jsKeywordsRaw: Record<string, string> = {
   'الشكل': 'shape',
   'الهيئة': 'form',
   'المظهر': 'appearance',
-  'الصورة': 'image',
   'المنظر': 'view',
   'المشهد': 'scene',
   'اللون': 'color',
-  'الصوت': 'sound',
   'الضوضاء': 'noise',
   'الصمت': 'silence',
-  'الهدوء': 'quiet',
   'الضوء': 'light',
   'الظلام': 'darkness',
   'الظل': 'shadow',
@@ -1346,15 +1175,12 @@ const jsKeywordsRaw: Record<string, string> = {
   'البريق': 'glitter',
   'الوضوح': 'clarity',
   'الغموض': 'ambiguity',
-  'الوضوح': 'clearness',
   'التعقيد': 'complexity',
   'البساطة': 'simplicity',
   'السهولة': 'ease',
   'الصعوبة': 'difficulty',
   'التحدي': 'challenge',
   'المغامرة': 'adventure',
-  'الرحلة': 'journey',
-  'السفر': 'travel',
   'الانتقال': 'transition',
   'التحول': 'transformation',
   'التطور': 'evolution',
@@ -1365,28 +1191,18 @@ const jsKeywordsRaw: Record<string, string> = {
   'الانكماش': 'shrinkage',
   'الامتداد': 'extension',
   'الاتجاه': 'direction',
-  'المسار': 'path',
-  'الطريقة': 'way',
   'الأسلوب': 'style',
   'النمط': 'pattern',
   'النموذج': 'model',
   'المثال': 'example',
-  'الحالة': 'case',
-  'الوضع': 'status',
   'الظرف': 'condition',
-  'البيئة': 'environment',
   'الجو': 'atmosphere',
-  'المناخ': 'climate',
-  'الطقس': 'weather',
-  'الفصل': 'season',
-  'الوقت': 'time',
   'اللحظة': 'moment',
   'الفترة': 'period',
   'المدة': 'duration',
   'الزمن': 'time',
   'العصر': 'era',
   'الحقبة': 'epoch',
-  'التاريخ': 'history',
   'الماضي': 'past',
   'الحاضر': 'present',
   'المستقبل': 'future',
@@ -1394,9 +1210,7 @@ const jsKeywordsRaw: Record<string, string> = {
   'حاليا': 'currently',
   'مؤخرا': 'recently',
   'قريبا': 'soon',
-  'غدا': 'tomorrow',
   'بعد غد': 'day after tomorrow',
-  'أمس': 'yesterday',
   'أول أمس': 'day before yesterday',
   'هذا الأسبوع': 'this week',
   'الأسبوع الماضي': 'last week',
@@ -1416,7 +1230,6 @@ const jsKeywordsRaw: Record<string, string> = {
   'بانتظام': 'regularly',
   'أولا': 'first',
   'ثانيا': 'second',
-  'أخيرا': 'finally',
   'في النهاية': 'at the end',
   'في البداية': 'at the beginning',
   'في الوسط': 'in the middle',
@@ -1431,329 +1244,65 @@ const jsKeywordsRaw: Record<string, string> = {
   'في الخارج': 'outside',
   'قريب': 'near',
   'بعيد': 'far',
-  'هنا': 'here',
-  'هناك': 'there',
   'في كل مكان': 'everywhere',
   'في أي مكان': 'anywhere',
   'لا مكان': 'nowhere',
-  'في مكان ما': 'somewhere'
+  'في مكان ما': 'somewhere',
+
+  // E-commerce specific terms
+  'منتج': 'product',
+  'سلعة': 'goods',
+  'ماركة': 'brand',
+  'علامة تجارية': 'trademark',
+  'سعر': 'price',
+  'مخزون': 'stock',
+  'وصف': 'description',
+  'تفاصيل': 'details',
+  'مراجعة': 'review',
+  'تقييم': 'rating',
+  'صورة': 'image',
+  'لقطة': 'snapshot',
+  'عربة التسوق': 'cart',
+  'سلة': 'basket',
+  'إتمام الشراء': 'checkout',
+  'طلبية': 'order',
+  'شحن': 'shipment',
+  'توصيل': 'delivery',
+  'تسليم': 'handover',
+  'كوبون': 'coupon',
+  'قسيمة': 'voucher',
+  'ملف شخصي': 'profile',
+  'اشتراك': 'register',
+  'بطاقة ائتمانية': 'credit card',
+  'تأكيد': 'confirmation',
+  'فاتورة': 'invoice',
+  'إيصال': 'receipt',
+  'توفر': 'availability',
+  'في انتظار': 'pending',
+  'تم شحنه': 'shipped',
+  'تم توصيله': 'delivered',
+  'ملغى': 'cancelled',
+  'استرجاع الأموال': 'refund',
+  'ضريبة': 'tax',
+  'رسوم الشحن': 'shipping fee',
+  'بريد إلكتروني': 'email'
 };
 
-
-  const jsKeywords: Record<string, string> = Object.fromEntries(
-    Object.entries(jsKeywordsRaw).map(([k, v]) => [normalizeArabic(k), v])
-  );
-const validateAndTranslate = (code: string) => {
-  const lines = code.split('\n');
-  const newErrors: TranslationError[] = [];
-  const translatedLines: string[] = [];
-
-  lines.forEach((line, index) => {
-    const stringRanges = getStringRanges(line);
-
-    const stripStrings = (s: string) => {
-      let out = s;
-      stringRanges.slice().reverse().forEach(r => {
-        out = out.slice(0, r.start) + ' '.repeat(r.end - r.start) + out.slice(r.end);
-      });
-      return out;
-    };
-
-    const processSegment = (seg: string) => {
-      let result = seg;
-      const arabicWords = seg.match(/[\u0600-\u06FF_]+/g) || [];
-      arabicWords.forEach((word) => {
-        const cleanWord = word.trim();
-        const normalized = normalizeArabic(cleanWord);
-        const replacement = jsKeywords[normalized];
-
-        if (replacement) {
-          const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const re = new RegExp(safeWord, 'g');
-          result = result.replace(re, replacement);
-        } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
-            newErrors.push({
-              line: index + 1,
-              message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
-              word: cleanWord
-            });
-          }
-        }
-      });
-      return result;
-    };
-
-    let translatedLine = '';
-    if (stringRanges.length === 0) {
-      translatedLine = processSegment(line);
-    } else {
-      let cursor = 0;
-      stringRanges.forEach((r) => {
-        const before = line.slice(cursor, r.start);
-        translatedLine += processSegment(before);
-        translatedLine += line.slice(r.start, r.end); // keep string literal intact
-        cursor = r.end;
-      });
-      if (cursor < line.length) {
-        translatedLine += processSegment(line.slice(cursor));
-      }
-    }
-
-    // Simple syntax checks ignoring strings
-    const lineNoStrings = stripStrings(line);
-
-    if (lineNoStrings.includes('(') && !lineNoStrings.includes(')')) {
-      newErrors.push({
-        line: index + 1,
-        message: 'قوس مفتوح غير مغلق',
-        word: '('
-      });
-    }
-
-    if (
-      lineNoStrings.includes('{') &&
-      !lineNoStrings.includes('}') &&
-      !lines.slice(index + 1).some(l => l.includes('}'))
-    ) {
-      newErrors.push({
-        line: index + 1,
-        message: 'قوس معقوف مفتوح غير مغلق',
-        word: '{'
-      });
-    }
-
-    translatedLines.push(translatedLine);
-  });
-
-  setErrors(newErrors);
-  return translatedLines.join('\n');
+// Function to count total translations
+export const getTotalWordsCount = (): number => {
+  return Object.keys(translationDatabase).length;
 };
 
+// Function to normalize Arabic text
+export const normalizeArabic = (s: string): string => s
+  .replace(/\u0640/g, '') // remove tatweel
+  .replace(/[\u064B-\u065F]/g, '') // remove diacritics
+  .replace(/[أإآا]/g, 'ا') // normalize alef
+  .replace(/ى/g, 'ي') // normalize alif maqsura to ya
+  .replace(/ة/g, 'ه') // normalize ta marbuta to ha (approx.)
+  .trim();
 
-  const handleTranslate = () => {
-    if (!arabicCode.trim()) return;
-    
-    setIsTranslating(true);
-    
-    // Simulate processing time
-    setTimeout(() => {
-      const translated = validateAndTranslate(arabicCode);
-      setTranslatedCode(translated);
-      setIsTranslating(false);
-    }, 1000);
-  };
-
-const highlightErrors = (code: string) => {
-  const escapeHtml = (s: string) =>
-    s.replace(/&/g, '&amp;')
-     .replace(/</g, '&lt;')
-     .replace(/>/g, '&gt;');
-
-  const lines = code.split('\n');
-
-  const isInRanges = (idx: number, ranges: Array<{ start: number; end: number }>) =>
-    ranges.some(r => idx >= r.start && idx < r.end);
-
-  const resultLines = lines.map((line, i) => {
-    const lineIndex = i + 1;
-    const lineErrors = errors.filter(e => e.line === lineIndex);
-    if (lineErrors.length === 0) return escapeHtml(line);
-
-    const ranges = getStringRanges(line);
-    type Marker = { start: number; end: number; message: string };
-    const markers: Marker[] = [];
-
-    const addMarkersForWord = (word: string, message: string) => {
-      if (!word) return;
-      let from = 0;
-      while (from < line.length) {
-        const at = line.indexOf(word, from);
-        if (at === -1) break;
-        const end = at + word.length;
-        if (!isInRanges(at, ranges)) {
-          markers.push({ start: at, end, message });
-        }
-        from = end;
-      }
-    };
-
-    lineErrors.forEach(err => addMarkersForWord(err.word, err.message));
-
-    // Sort and de-duplicate overlapping markers
-    markers.sort((a, b) => a.start - b.start);
-    const merged: Marker[] = [];
-    markers.forEach(m => {
-      const last = merged[merged.length - 1];
-      if (!last || m.start >= last.end) merged.push(m);
-    });
-
-    let out = '';
-    let cursor = 0;
-    const escapeAttr = (s: string) => (s || '').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-
-    merged.forEach(m => {
-      if (cursor < m.start) out += escapeHtml(line.slice(cursor, m.start));
-      const rawWord = line.slice(m.start, m.end);
-      out += `<span class="bg-error-red/20 text-error-red rounded-sm box-decoration-clone cursor-help" data-error-message='${escapeAttr(m.message)}'>${escapeHtml(rawWord)}</span>`;
-      cursor = m.end;
-    });
-
-    if (cursor < line.length) out += escapeHtml(line.slice(cursor));
-    return out;
-  });
-
-  return resultLines.join('\n');
-};
-
-const handleHighlighterClick = (e: React.MouseEvent) => {
-  const ov = overlayRef.current;
-  if (!ov) return;
-  const prev = ov.style.pointerEvents;
-  ov.style.pointerEvents = 'auto';
-  const el = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-  ov.style.pointerEvents = prev || 'none';
-  const hit = el?.closest('[data-error-message]') as HTMLElement | null;
-  if (hit) {
-    const message = hit.getAttribute('data-error-message') || 'خطأ غير محدد';
-    toast({
-      title: 'تفاصيل الخطأ',
-      description: message,
-    });
-  }
-};
-
-
-  return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      {/* Arabic Input */}
-      <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-arabic-blue">
-            <Code className="h-5 w-5" />
-            الكود بالعربية
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-<div className="relative" onClick={handleHighlighterClick}>
-  <div
-    ref={overlayRef}
-    className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-right text-sm leading-6 px-3 py-2 rounded-md pointer-events-none"
-    dir="rtl"
-    dangerouslySetInnerHTML={{ __html: highlightErrors(arabicCode) }}
-  />
-  <Textarea
-    ref={arabicTextareaRef}
-    value={arabicCode}
-    onChange={(e) => {
-      setArabicCode(e.target.value);
-      // Live validation to highlight errors as you type
-      validateAndTranslate(e.target.value);
-    }}
-    placeholder="اكتب الكود بالعربية هنا...
-
-مثال:
-متغير اسم = 'أحمد'
-دالة تحية() {
-  طباعة('مرحبا ' + اسم)
-}
-تحية()"
-    className="min-h-[300px] font-mono text-right bg-transparent border-arabic-blue/30 focus:border-arabic-blue text-transparent caret-transparent px-3 py-2 text-sm leading-6 resize-none overflow-hidden"
-    dir="rtl"
-    style={{ caretColor: 'hsl(var(--foreground))' }}
-  />
-</div>
-          
-          {errors.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-error-red flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                أخطاء في الكود:
-              </h4>
-              {errors.map((error, index) => (
-                <Badge key={index} variant="destructive" className="text-xs">
-                  السطر {error.line}: {error.message}
-                </Badge>
-              ))}
-            </div>
-          )}
-          
-<div className="grid grid-cols-1 gap-2">
-  <Button 
-    onClick={handleTranslate} 
-    disabled={!arabicCode.trim() || isTranslating}
-    className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
-  >
-    {isTranslating ? (
-      'جاري الترجمة...'
-    ) : (
-      <>
-        ترجم إلى JavaScript
-        <ArrowRight className="mr-2 h-4 w-4" />
-      </>
-    )}
-  </Button>
-  <Button 
-    onClick={() => {
-      navigator.clipboard.writeText(arabicCode);
-      toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
-    }}
-    variant="outline"
-    className="w-full border-arabic-blue/30 hover:bg-arabic-blue/10"
-  >
-    نسخ المكتوب
-  </Button>
-</div>
-        </CardContent>
-      </Card>
-
-      {/* English Output */}
-      <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-js-yellow">
-            <Code className="h-5 w-5" />
-            JavaScript Code
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {translatedCode ? (
-            <div className="space-y-4">
-              <div className="relative">
-                <Textarea
-                  value={translatedCode}
-                  readOnly
-                  className="min-h-[300px] font-mono bg-background/50 border-js-yellow/30"
-                />
-                {errors.length === 0 && (
-                  <Badge className="absolute top-2 right-2 bg-js-green text-white">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    جاهز للتشغيل
-                  </Badge>
-                )}
-              </div>
-  <Button 
-    onClick={() => {
-      navigator.clipboard.writeText(translatedCode);
-      toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
-    }}
-    variant="outline"
-    className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
-  >
-    نسخ الناتج النهائي
-  </Button>
-            </div>
-          ) : (
-            <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">
-              <div className="text-center space-y-2">
-                <Code className="h-12 w-12 mx-auto opacity-50" />
-                <p>سيظهر الكود المترجم هنا</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
-export default CodeTranslator;
+// Create normalized keywords for translation
+export const normalizedTranslationDatabase: Record<string, string> = Object.fromEntries(
+  Object.entries(translationDatabase).map(([k, v]) => [normalizeArabic(k), v])
+);
