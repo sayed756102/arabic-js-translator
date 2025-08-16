@@ -87,26 +87,51 @@ const validateAndTranslate = (code: string) => {
 
     const processSegment = (seg: string) => {
       let result = seg;
-      const arabicWords = seg.match(/[\u0600-\u06FF_]+/g) || [];
-      arabicWords.forEach((word) => {
-        const cleanWord = word.trim();
+      
+      // Find Z-wrapped words first (ZكلمةZ)
+      const zWrappedPattern = /Z([\u0600-\u06FF_]+)Z/g;
+      const zMatches = [...seg.matchAll(zWrappedPattern)];
+      
+      zMatches.forEach(match => {
+        const fullMatch = match[0]; // ZكلمةZ
+        const arabicWord = match[1]; // كلمة
+        const cleanWord = arabicWord.trim();
         const normalized = normalizeArabic(cleanWord);
         const replacement = jsKeywords[normalized];
 
         if (replacement) {
-          const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const re = new RegExp(safeWord, 'g');
-          result = result.replace(re, replacement);
+          result = result.replace(fullMatch, replacement);
         } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
           if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
             newErrors.push({
               line: index + 1,
-              message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
+              message: `كلمة غير معروفة في JavaScript: ${cleanWord} (استخدم Z${cleanWord}Z للترجمة)`,
               word: cleanWord
             });
           }
         }
       });
+
+      // Check for Arabic words NOT wrapped in Z and show warning
+      const unwrappedArabic = result.match(/(?<!Z)[\u0600-\u06FF_]+(?!Z)/g) || [];
+      unwrappedArabic.forEach((word) => {
+        const cleanWord = word.trim();
+        const normalized = normalizeArabic(cleanWord);
+        
+        if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
+            // Only show error for Arabic words not wrapped in Z
+            if (!result.includes(`Z${cleanWord}Z`)) {
+              newErrors.push({
+                line: index + 1,
+                message: `استخدم Z${cleanWord}Z لترجمة هذه الكلمة`,
+                word: cleanWord
+              });
+            }
+          }
+        }
+      });
+
       return result;
     };
 
