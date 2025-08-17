@@ -32,7 +32,7 @@ const Index = () => {
           "@type": "Organization",
           name: "ZAS-برمجه",
           url: `${siteUrl}/`,
-          logo: `${siteUrl}/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png`
+          : `${siteUrl}/https://www.blogger.com/blog/post/edit/408772472981721833/3590592187584076023'
         })}</script>
       </Helmet>
       <Header />
