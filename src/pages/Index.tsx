@@ -105,7 +105,7 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-4">
             <div className="flex justify-center items-center gap-2">
-              <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
+              <img src="https://www.blogger.com/blog/post/edit/408772472981721833/3590592187584076023" alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
               <span className="font-semibold">ZAS-برمجه</span>
             </div>
             <p className="text-sm text-muted-foreground">
