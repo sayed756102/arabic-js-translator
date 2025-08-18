@@ -951,9 +951,6 @@ export const translationDatabase: Record<string, string> = {
   'عادة ما': 'usually',
   'في المقام الأول': 'first',
   'في المقام الثاني': 'second',
-  'في النهاية': 'finally',
-
-  // Nature and environment (continued)
   'ترتيب تصاعدي': 'ascending order',
   'ترتيب تنازلي': 'descending order',
   'حرف كبير': 'uppercase',
