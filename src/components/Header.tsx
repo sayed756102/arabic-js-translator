@@ -15,7 +15,7 @@ const Header: React.FC = () => {
     <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60" dir="rtl">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <a href="/" className="inline-flex items-center gap-2 font-semibold" aria-label="الصفحة الرئيسية">
-          <img src="/https://www.blogger.com/blog/post/edit/408772472981721833/3590592187584076023 alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
+          <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
           <span>ZAS-برمجه</span>
         </a>
         <nav className="flex items-center gap-3 text-sm">
