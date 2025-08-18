@@ -952,8 +952,9 @@ export const translationDatabase: Record<string, string> = {
   'في المقام الأول': 'first',
   'في المقام الثاني': 'second',
   'في النهاية': 'finally'
-// Nature and environment (continued)
-  'نطاق': 'range',
+
+    // Nature and environment (continued)
+  
   'ترتيب تصاعدي': 'ascending order',
   'ترتيب تنازلي': 'descending order',
   'حرف كبير': 'uppercase',
