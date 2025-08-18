@@ -950,7 +950,7 @@ export const translationDatabase: Record<string, string> = {
   'نادرا ما': 'rarely',
   'عادة ما': 'usually',
   'في المقام الأول': 'first',
-  'في المقام الثاني': 'Secondly',
+  'في المقام الثاني': 'secondly',
   'حرف كبير': 'uppercase',
   'حرف صغير': 'lowercase',
   'فارغة': 'empty',
