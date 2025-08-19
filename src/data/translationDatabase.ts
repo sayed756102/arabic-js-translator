@@ -1554,10 +1554,8 @@ export const translationDatabase: Record<string, string> = {
 
   // People (Additional)
  'صبي': 'boy',
-  'امرأة': 'woman', // Already exists
 
   // Professions (continued)
-  'محامي': 'lawyer', // Already exists
   'قاضي': 'judge',
   'شرطي': 'police officer',
   'مدرس': 'teacher',
@@ -2444,32 +2442,19 @@ export const translationDatabase: Record<string, string> = {
   'أم درمان': 'Omdurman',
   'بورتسودان': 'Port Sudan',
   'رام الله': 'Ramallah',
-
-
-
-
-
   'محافظة': 'governorate',
-  'مستشفى': 'hospital', // Already exists
+  'مستشفى': 'hospital', 
+
+  // Already exists
   'صيدلية': 'pharmacy',
   'مخبز': 'bakery',
   'بقالة': 'grocery store',
   'محل': 'shop',
   'سوق': 'market',
  'مركز تسوق': 'shopping mall',
-  'مطعم': 'restaurant', // Already exists
- 'فندق': 'hotel', // Already exists
-  'مطار': 'airport', // Already exists
-  'محطة قطار': 'train station',
- 'جامعة': 'university', // Already exists
- 'مدرسة': 'school', // Already exists
- 'متحف': 'museum', // Already exists
- 'مسرح': 'theater', // Already exists
- 'سينما': 'cinema', // Already exists
   'مسجد': 'mosque',
   'كنيسة': 'church',
   'شقة': 'apartment',
-  'منزل': 'house', // Already exists
   'فيلا': 'villa',
   'قصر': 'palace',
   'جدار': 'wall',
@@ -2480,17 +2465,9 @@ export const translationDatabase: Record<string, string> = {
   'غرفة نوم': 'bedroom',
   'غرفة معيشة': 'living room',
   'غرفة طعام': 'dining room',
-  'مكتب': 'office', // Already exists
-  'حديقة': 'garden', // Already exists
-  'سيارة': 'car', // Already exists
-  'طائرة': 'airplane', // Already exists
-  'قارب': 'boat', // Already exists
-  'قطار': 'train', // Already exists
   'مترو': 'subway',
  'ترام': 'tram',
   'حافلة': 'bus',
-  'تاكسي': 'taxi', // Already exists
- 'إشارة مرور': 'traffic light', // Already exists
   'محرك': 'engine',
   'مكابح': 'brakes',
   'مقعد': 'seat',
@@ -2499,22 +2476,11 @@ export const translationDatabase: Record<string, string> = {
   'خريطة': 'map',
   'اتجاه': 'direction',
  'بوصلة': 'compass',
-  'أعلى': 'up', // Already exists
-  'أسفل': 'down', // Already exists
   'أمام': 'front',
- 'خلف': 'back', // Already exists
  'جانب': 'side',
-  'بعيد': 'far', // Already exists
-  'هنا': 'here',
-  'هناك': 'there', // Already exists
   'أين': 'where',
   'متى': 'when',
-  'كيف': 'how',
-  'لماذا': 'why', // Already exists
-  'ماذا': 'what', // Already exists
-  'من': 'who', // Already exists
-  'أي': 'which', // Already exists
-  'كم': 'how many',
+  'كيف': 'how',  'كم': 'how many',
   'كم السعر': 'how much',
   'نعم': 'yes',
   'لا': 'no',
@@ -2561,8 +2527,6 @@ export const translationDatabase: Record<string, string> = {
   'الشهر القادم': 'next month',
   'العام الماضي': 'last year',
   'كل يوم': 'every day',
-  'كل أسبوع': 'every week', // Already exists
-  'كل شهر': 'every month', // Already exists
   'كل عام': 'every year',
   'الآن': 'now',
   'ثم': 'then',
@@ -2572,11 +2536,8 @@ export const translationDatabase: Record<string, string> = {
   'منذ': 'since',
   'حتى': 'until',
   'دائما': 'always',
-  'أبدا': 'never', // Already exists
-  'أحيانا': 'sometimes', // Already exists
   'غالبا': 'often',
   'في الغالب': 'mostly',
-  'نادرا': 'rarely', // Already exists
   'عادة': 'usually',
   'بشكل عام': 'generally',
   'بشكل خاص': 'especially',
@@ -2615,11 +2576,9 @@ export const translationDatabase: Record<string, string> = {
   'من خلال': 'through',
   'باتجاه': 'towards',
   'ضد': 'against',
-  'حول': 'about', // Already exists
   'من': 'of',
   'بواسطة': 'by',
   'مثل': 'like',
-  'كـ': 'as', // Already exists
   'من': 'than',
   'ذلك': 'that',
   'تلك': 'those',
@@ -2632,19 +2591,12 @@ export const translationDatabase: Record<string, string> = {
   'كل': 'each',
   'كل': 'every',
   'كلاهما': 'both',
-  'إما': 'either', // Already exists
   'آخر': 'another',
-  'أي': 'any', // Already exists
   'لا شيء': 'no',
   'شيء ما': 'something',
   'لا شيء': 'nothing',
-  'شخص ما': 'someone', // Already exists
   'كل شخص': 'everybody',
-  'لا أحد': 'nobody', // Already exists
-  'في أي مكان': 'anywhere', // Already exists
   'كل مكان': 'everywhere',
-  'الذين': 'who', // Already exists
-  'الذي': 'which', // Already exists
 
   // People (Specific Names - Added more)
   'ياسين': 'Yasin',
@@ -2730,29 +2682,10 @@ export const translationDatabase: Record<string, string> = {
   'القدس': 'Jerusalem',
   'رام الله': 'Ramallah',
   'برامج': 'programs',
-
-  // Animals (Specific Names - Added)
- 'أسد': 'lion', // Already exists
- 'زرافة': 'giraffe', // Already exists
-  'حمار وحشي': 'zebra',
- 'فيل': 'elephant', // Already exists
- 'قرد': 'monkey', // Already exists
+ 'حمار وحشي': 'zebra',
   'كنغر': 'kangaroo',
   'باندا': 'panda',
- 'ذئب': 'wolf', // Already exists
- 'ثعلب': 'fox', // Already exists
- 'نمر': 'tiger', // Already exists
- 'تمساح': 'crocodile', // Already exists
- 'ثعبان': 'snake', // Already exists
- 'سحلية': 'lizard', // Already exists
- 'سلحفاة': 'turtle', // Already exists
- 'ضفدع': 'frog', // Already exists
-  'بطريق': 'penguin',
- 'نسر': 'eagle', // Already exists
- 'صقر': 'falcon', // Already exists
   'ببغاء': 'parrot',
- 'عصفور': 'sparrow', // Already exists
- 'حمامة': 'pigeon', // Already exists
   'ديك': 'rooster',
   'دجاجة': 'chicken',
   'بطة': 'duck',
@@ -2770,16 +2703,11 @@ export const translationDatabase: Record<string, string> = {
   'أرنب': 'rabbit',
   'فأر': 'mouse',
  'جرذ': 'rat',
-  'حيوان': 'animal', // Already exists
- 'ثعبان': 'snake', // Already exists
- 'عقرب': 'scorpion', // Already exists
 
   // Verbs (Added Diverse Set)
-  'يشرب': 'drink', // Already exists
   'ينام': 'sleep',
  'يستيقظ': 'wake up',
   'يذهب': 'go',
-  'يجلس': 'sit', // Already exists
   'يقف': 'stand',
   'يطير': 'fly',
   'يشاهد': 'behold',
@@ -2802,28 +2730,22 @@ export const translationDatabase: Record<string, string> = {
   'يرتب': 'arrange',
   'ينظم': 'organize',
   'يشتري': 'buy',
-  'يبيع': 'sell', // Already exists
   'يستقبل': 'receive',
   'يجد': 'find',
   'يفقد': 'lose',
-  'يفتح': 'open', // Already exists
   'يغلق': 'close',
   'يبدأ': 'start',
   'ينتهي': 'finish',
   'يركض': 'run',
   'يمشي': 'walk',
   'يقود': 'drive',
-  'يسافر': 'travel', // Already exists
-  'متعب': 'tired', // Already exists
   'جائع': 'hungry',
   'عطشان': 'thirsty',
-  'مريض': 'sick', // Already exists
   'سعيد': 'happy',
   'حزين': 'sad',
   'غاضب': 'angry',
  'خائف': 'afraid',
   'من': 'whose',
- 'أين': 'where', // Already exists
   'متى': 'when',
   'لماذا': 'why',
   'كيف': 'how',
