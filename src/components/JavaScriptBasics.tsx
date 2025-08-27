@@ -5,53 +5,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Book, Code2, Lightbulb } from 'lucide-react';
 
 const JavaScriptBasics = () => {
-  // Special Z-wrapping feature
-  const zWrappingInfo = {
-    title: 'ميزة حرف Z للترجمة',
-    description: 'استخدم حرف Z لتحديد الكلمات التي تريد ترجمتها فقط',
-    examples: [
-      {
-        arabic: 'ZمتغيرZ اسم = "أحمد"',
-        english: 'let اسم = "أحمد"',
-        explanation: 'فقط كلمة "متغير" ستُترجم إلى "let"'
-      },
-      {
-        arabic: 'ZدالةZ ZطباعةZ("مرحبا")',
-        english: 'function console.log("مرحبا")',
-        explanation: 'كلمة "دالة" تُترجم إلى "function" و "طباعة" إلى "console.log"'
-      },
-      {
-        arabic: 'Zإذا كانZ (العمر > 18)',
-        english: 'if (العمر > 18)',
-        explanation: 'فقط "إذا كان" يُترجم، باقي النص يبقى كما هو'
-      }
-    ]
-  };
-
   const basicConcepts = [
     {
       arabic: 'متغير',
       english: 'let',
       description: 'لإنشاء متغير قابل للتغيير',
-      example: 'ZمتغيرZ اسم = "أحمد"\nlet اسم = "Ahmed"'
+      example: 'متغير اسم = "أحمد"\nlet name = "Ahmed"'
     },
     {
       arabic: 'ثابت',
       english: 'const',
       description: 'لإنشاء متغير ثابت غير قابل للتغيير',
-      example: 'ZثابتZ العمر = 25\nconst العمر = 25'
+      example: 'ثابت العمر = 25\nconst age = 25'
     },
     {
       arabic: 'دالة',
       english: 'function',
       description: 'لإنشاء دالة',
-      example: 'ZدالةZ تحية() {\n  ZطباعةZ("مرحبا")\n}\nfunction تحية() {\n  console.log("مرحبا")\n}'
+      example: 'دالة تحية() {\n  طباعة("مرحبا")\n}\nfunction greet() {\n  console.log("Hello")\n}'
     },
     {
       arabic: 'إذا',
       english: 'if',
       description: 'للشروط',
-      example: 'ZإذاZ (العمر > 18) {\n  ZطباعةZ("بالغ")\n}\nif (العمر > 18) {\n  console.log("بالغ")\n}'
+      example: 'إذا (العمر > 18) {\n  طباعة("بالغ")\n}\nif (age > 18) {\n  console.log("Adult")\n}'
     }
   ];
 
@@ -131,11 +108,7 @@ const JavaScriptBasics = () => {
       </div>
 
       <Tabs defaultValue="keywords" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="z-feature" className="flex items-center gap-2">
-            <span className="font-bold text-lg">Z</span>
-            ميزة الترجمة
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="keywords" className="flex items-center gap-2">
             <Book className="h-4 w-4" />
             الكلمات المفتاحية
@@ -149,62 +122,6 @@ const JavaScriptBasics = () => {
             العمليات الحسابية
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="z-feature" className="space-y-4">
-          <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <span className="bg-primary text-primary-foreground px-2 py-1 rounded font-bold">Z</span>
-                {zWrappingInfo.title}
-              </CardTitle>
-              <p className="text-muted-foreground">{zWrappingInfo.description}</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">💡 كيف تعمل؟</h4>
-                <p className="text-sm text-amber-700 dark:text-amber-300">
-                  احط أي كلمة عربية بين حرفين Z مثل <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">ZمتغيرZ</code> وستُترجم تلقائياً. 
-                  الكلمات بدون Z لن تُترجم وستبقى كما هي.
-                </p>
-              </div>
-              
-              <div className="grid gap-4">
-                <h4 className="font-semibold">أمثلة عملية:</h4>
-                {zWrappingInfo.examples.map((example, index) => (
-                  <Card key={index} className="border-l-4 border-l-primary">
-                    <CardContent className="pt-4">
-                      <div className="space-y-3">
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">الكود العربي:</h5>
-                          <code className="block bg-background border p-2 rounded text-right font-mono text-sm">
-                            {example.arabic}
-                          </code>
-                        </div>
-                        <div>
-                          <h5 className="font-medium text-sm text-muted-foreground mb-1">النتيجة بعد الترجمة:</h5>
-                          <code className="block bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-2 rounded text-right font-mono text-sm">
-                            {example.english}
-                          </code>
-                        </div>
-                        <p className="text-xs text-muted-foreground">{example.explanation}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">📋 قواعد مهمة:</h4>
-                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                  <li>• استخدم حرف Z (بالإنجليزية) وليس ز (بالعربية)</li>
-                  <li>• يجب وضع Z قبل وبعد الكلمة بدون مسافات</li>
-                  <li>• يمكن استخدام عدة كلمات Z في نفس السطر</li>
-                  <li>• الكلمات بدون Z ستبقى بالعربية في النتيجة النهائية</li>
-                </ul>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="keywords" className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
