@@ -85,55 +85,52 @@ const validateAndTranslate = (code: string) => {
       return out;
     };
 
-    const processSegment = (seg: string, insideString: boolean = false) => {
+    const processSegment = (seg: string) => {
       let result = seg;
       
-      if (insideString) {
-        // Inside strings: only translate Z-wrapped words
-        const zWrappedPattern = /Z([\u0600-\u06FF_]+)Z/g;
-        const zMatches = [...seg.matchAll(zWrappedPattern)];
-        
-        zMatches.forEach(match => {
-          const fullMatch = match[0]; // ZكلمةZ
-          const arabicWord = match[1]; // كلمة
-          const cleanWord = arabicWord.trim();
-          const normalized = normalizeArabic(cleanWord);
-          const replacement = jsKeywords[normalized];
+      // Find Z-wrapped words first (ZكلمةZ)
+      const zWrappedPattern = /Z([\u0600-\u06FF_]+)Z/g;
+      const zMatches = [...seg.matchAll(zWrappedPattern)];
+      
+      zMatches.forEach(match => {
+        const fullMatch = match[0]; // ZكلمةZ
+        const arabicWord = match[1]; // كلمة
+        const cleanWord = arabicWord.trim();
+        const normalized = normalizeArabic(cleanWord);
+        const replacement = jsKeywords[normalized];
 
-          if (replacement) {
-            result = result.replace(fullMatch, replacement);
-          } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+        if (replacement) {
+          result = result.replace(fullMatch, replacement);
+        } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
             newErrors.push({
               line: index + 1,
-              message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
+              message: `كلمة غير معروفة في JavaScript: ${cleanWord} (استخدم Z${cleanWord}Z للترجمة)`,
               word: cleanWord
             });
           }
-        });
-      } else {
-        // Outside strings: translate all Arabic words directly
-        const arabicPattern = /[\u0600-\u06FF_]+/g;
-        const arabicMatches = [...seg.matchAll(arabicPattern)];
-        
-        arabicMatches.forEach(match => {
-          const arabicWord = match[0];
-          const cleanWord = arabicWord.trim();
-          const normalized = normalizeArabic(cleanWord);
-          const replacement = jsKeywords[normalized];
+        }
+      });
 
-          if (replacement) {
-            result = result.replace(arabicWord, replacement);
-          } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-            if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
+      // Check for Arabic words NOT wrapped in Z and show warning
+      const unwrappedArabic = result.match(/(?<!Z)[\u0600-\u06FF_]+(?!Z)/g) || [];
+      unwrappedArabic.forEach((word) => {
+        const cleanWord = word.trim();
+        const normalized = normalizeArabic(cleanWord);
+        
+        if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
+            // Only show error for Arabic words not wrapped in Z
+            if (!result.includes(`Z${cleanWord}Z`)) {
               newErrors.push({
                 line: index + 1,
-                message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
+                message: `استخدم Z${cleanWord}Z لترجمة هذه الكلمة`,
                 word: cleanWord
               });
             }
           }
-        });
-      }
+        }
+      });
 
       return result;
     };
@@ -145,9 +142,8 @@ const validateAndTranslate = (code: string) => {
       let cursor = 0;
       stringRanges.forEach((r) => {
         const before = line.slice(cursor, r.start);
-        translatedLine += processSegment(before, false); // outside string
-        const stringContent = line.slice(r.start, r.end);
-        translatedLine += processSegment(stringContent, true); // inside string
+        translatedLine += processSegment(before);
+        translatedLine += line.slice(r.start, r.end); // keep string literal intact
         cursor = r.end;
       });
       if (cursor < line.length) {

@@ -5,47 +5,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Book, Code2, Lightbulb } from 'lucide-react';
 
 const JavaScriptBasics = () => {
-  // Translation feature explanation
-  const translationFeature = {
-    title: 'نظام الترجمة الذكي',
-    description: 'يترجم الكود تلقائياً حسب الموقع - خارج الأقواس أم داخلها',
-    outsideStrings: {
-      title: 'خارج الأقواس (الكود العادي)',
-      description: 'جميع الكلمات العربية تُترجم تلقائياً',
-      examples: [
-        {
-          arabic: 'متغير اسم = "أحمد"',
-          english: 'let اسم = "أحمد"',
-          explanation: 'كلمة "متغير" تُترجم تلقائياً لأنها خارج الأقواس'
-        },
-        {
-          arabic: 'دالة طباعة() {\n    اطبع("مرحبا")\n}',
-          english: 'function console.log() {\n    console.log("مرحبا")\n}',
-          explanation: 'جميع الكلمات خارج الأقواس تُترجم تلقائياً'
-        }
-      ]
-    },
-    insideStrings: {
-      title: 'داخل الأقواس (النصوص)',
-      description: 'فقط الكلمات المحاطة بـ Z تُترجم',
-      examples: [
-        {
-          arabic: 'اطبع("مرحبا بك")',
-          english: 'console.log("مرحبا بك")',
-          explanation: 'النص داخل الأقواس يبقى كما هو'
-        },
-        {
-          arabic: 'اطبع("ZمرحباZ ZبكZ")',
-          english: 'console.log("Hello you")',
-          explanation: 'فقط الكلمات بين Z تُترجم داخل الأقواس'
-        },
-        {
-          arabic: 'اطبع("اهلا ZبكZ يا صديق")',
-          english: 'console.log("اهلا you يا صديق")',
-          explanation: 'تُترجم "بك" فقط، الباقي يبقى عربي'
-        }
-      ]
-    }
+  // Special Z-wrapping feature
+  const zWrappingInfo = {
+    title: 'ميزة حرف Z للترجمة',
+    description: 'استخدم حرف Z لتحديد الكلمات التي تريد ترجمتها فقط',
+    examples: [
+      {
+        arabic: 'ZمتغيرZ اسم = "أحمد"',
+        english: 'let اسم = "أحمد"',
+        explanation: 'فقط كلمة "متغير" ستُترجم إلى "let"'
+      },
+      {
+        arabic: 'ZدالةZ ZطباعةZ("مرحبا")',
+        english: 'function console.log("مرحبا")',
+        explanation: 'كلمة "دالة" تُترجم إلى "function" و "طباعة" إلى "console.log"'
+      },
+      {
+        arabic: 'Zإذا كانZ (العمر > 18)',
+        english: 'if (العمر > 18)',
+        explanation: 'فقط "إذا كان" يُترجم، باقي النص يبقى كما هو'
+      }
+    ]
   };
 
   const basicConcepts = [
@@ -152,9 +132,9 @@ const JavaScriptBasics = () => {
 
       <Tabs defaultValue="keywords" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="translation" className="flex items-center gap-2">
-            <Code2 className="h-4 w-4" />
-            نظام الترجمة
+          <TabsTrigger value="z-feature" className="flex items-center gap-2">
+            <span className="font-bold text-lg">Z</span>
+            ميزة الترجمة
           </TabsTrigger>
           <TabsTrigger value="keywords" className="flex items-center gap-2">
             <Book className="h-4 w-4" />
@@ -170,110 +150,57 @@ const JavaScriptBasics = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="translation" className="space-y-4">
+        <TabsContent value="z-feature" className="space-y-4">
           <Card className="border-primary/30 bg-gradient-to-br from-primary/10 to-transparent">
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2">
-                <Code2 className="h-5 w-5" />
-                {translationFeature.title}
+                <span className="bg-primary text-primary-foreground px-2 py-1 rounded font-bold">Z</span>
+                {zWrappingInfo.title}
               </CardTitle>
-              <p className="text-muted-foreground">{translationFeature.description}</p>
+              <p className="text-muted-foreground">{zWrappingInfo.description}</p>
             </CardHeader>
             <CardContent className="space-y-6">
-              
-              {/* Outside Strings Section */}
-              <div className="space-y-4">
-                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
-                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-                    🔗 {translationFeature.outsideStrings.title}
-                  </h4>
-                  <p className="text-sm text-green-700 dark:text-green-300 mb-3">
-                    {translationFeature.outsideStrings.description}
-                  </p>
-                  
-                  <div className="grid gap-3">
-                    {translationFeature.outsideStrings.examples.map((example, index) => (
-                      <Card key={index} className="bg-white/80 dark:bg-background/80">
-                        <CardContent className="pt-3">
-                          <div className="space-y-2">
-                            <div>
-                              <h6 className="font-medium text-xs text-muted-foreground mb-1">قبل الترجمة:</h6>
-                              <code className="block bg-background border p-2 rounded text-right font-mono text-xs">
-                                {example.arabic}
-                              </code>
-                            </div>
-                            <div>
-                              <h6 className="font-medium text-xs text-muted-foreground mb-1">بعد الترجمة:</h6>
-                              <code className="block bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 p-2 rounded text-right font-mono text-xs">
-                                {example.english}
-                              </code>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{example.explanation}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Inside Strings Section */}
-              <div className="space-y-4">
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
-                    📝 {translationFeature.insideStrings.title}
-                  </h4>
-                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                    {translationFeature.insideStrings.description}
-                  </p>
-                  
-                  <div className="grid gap-3">
-                    {translationFeature.insideStrings.examples.map((example, index) => (
-                      <Card key={index} className="bg-white/80 dark:bg-background/80">
-                        <CardContent className="pt-3">
-                          <div className="space-y-2">
-                            <div>
-                              <h6 className="font-medium text-xs text-muted-foreground mb-1">قبل الترجمة:</h6>
-                              <code className="block bg-background border p-2 rounded text-right font-mono text-xs">
-                                {example.arabic}
-                              </code>
-                            </div>
-                            <div>
-                              <h6 className="font-medium text-xs text-muted-foreground mb-1">بعد الترجمة:</h6>
-                              <code className="block bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 p-2 rounded text-right font-mono text-xs">
-                                {example.english}
-                              </code>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{example.explanation}</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Rules Section */}
               <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-3">📋 ملخص القواعد:</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <h5 className="font-medium text-amber-700 dark:text-amber-300 mb-2">خارج الأقواس:</h5>
-                    <ul className="text-amber-600 dark:text-amber-400 space-y-1">
-                      <li>• جميع الكلمات العربية تُترجم تلقائياً</li>
-                      <li>• لا تحتاج لأي رموز خاصة</li>
-                      <li>• مثال: متغير → let</li>
-                    </ul>
-                  </div>
-                  <div>
-                    <h5 className="font-medium text-amber-700 dark:text-amber-300 mb-2">داخل الأقواس:</h5>
-                    <ul className="text-amber-600 dark:text-amber-400 space-y-1">
-                      <li>• فقط الكلمات بين Z تُترجم</li>
-                      <li>• باقي النص يبقى عربي</li>
-                      <li>• مثال: "ZمرحباZ" → "Hello"</li>
-                    </ul>
-                  </div>
-                </div>
+                <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">💡 كيف تعمل؟</h4>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  احط أي كلمة عربية بين حرفين Z مثل <code className="bg-amber-100 dark:bg-amber-800 px-1 rounded">ZمتغيرZ</code> وستُترجم تلقائياً. 
+                  الكلمات بدون Z لن تُترجم وستبقى كما هي.
+                </p>
+              </div>
+              
+              <div className="grid gap-4">
+                <h4 className="font-semibold">أمثلة عملية:</h4>
+                {zWrappingInfo.examples.map((example, index) => (
+                  <Card key={index} className="border-l-4 border-l-primary">
+                    <CardContent className="pt-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h5 className="font-medium text-sm text-muted-foreground mb-1">الكود العربي:</h5>
+                          <code className="block bg-background border p-2 rounded text-right font-mono text-sm">
+                            {example.arabic}
+                          </code>
+                        </div>
+                        <div>
+                          <h5 className="font-medium text-sm text-muted-foreground mb-1">النتيجة بعد الترجمة:</h5>
+                          <code className="block bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-2 rounded text-right font-mono text-sm">
+                            {example.english}
+                          </code>
+                        </div>
+                        <p className="text-xs text-muted-foreground">{example.explanation}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">📋 قواعد مهمة:</h4>
+                <ul className="text-sm text-blue-700 dark:text-blue-300 space-y-1">
+                  <li>• استخدم حرف Z (بالإنجليزية) وليس ز (بالعربية)</li>
+                  <li>• يجب وضع Z قبل وبعد الكلمة بدون مسافات</li>
+                  <li>• يمكن استخدام عدة كلمات Z في نفس السطر</li>
+                  <li>• الكلمات بدون Z ستبقى بالعربية في النتيجة النهائية</li>
+                </ul>
               </div>
             </CardContent>
           </Card>
