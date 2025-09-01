@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Code, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { translationDatabase } from '@/data/translationDatabase';
+import { jsKeywordsDatabase } from '@/data/translationDatabase';
+import { smartTranslate } from '@/services/translationService';
 
 interface TranslationError {
   line: number;
@@ -62,19 +63,19 @@ const getStringRanges = (line: string) => {
   return ranges;
 };
 
-// Use the imported translation database
+// Use the imported JavaScript keywords database
 const jsKeywords = Object.fromEntries(
-  Object.entries(translationDatabase).map(([arabic, english]) => [
+  Object.entries(jsKeywordsDatabase).map(([arabic, english]) => [
     normalizeArabic(arabic),
     english
   ])
 );
-const validateAndTranslate = (code: string) => {
+const validateAndTranslate = async (code: string) => {
   const lines = code.split('\n');
   const newErrors: TranslationError[] = [];
   const translatedLines: string[] = [];
 
-  lines.forEach((line, index) => {
+  for (const [index, line] of lines.entries()) {
     const stringRanges = getStringRanges(line);
 
     const stripStrings = (s: string) => {
@@ -85,44 +86,64 @@ const validateAndTranslate = (code: string) => {
       return out;
     };
 
-    const processSegment = (seg: string) => {
+    const processSegment = async (seg: string) => {
       let result = seg;
       const arabicWords = seg.match(/[\u0600-\u06FF_]+/g) || [];
-      arabicWords.forEach((word) => {
+      
+      for (const word of arabicWords) {
         const cleanWord = word.trim();
         const normalized = normalizeArabic(cleanWord);
-        const replacement = jsKeywords[normalized];
+        let replacement = jsKeywords[normalized];
 
         if (replacement) {
+          // استخدام قاعدة البيانات المحلية للكلمات المحجوزة
           const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const re = new RegExp(safeWord, 'g');
           result = result.replace(re, replacement);
         } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
-            newErrors.push({
-              line: index + 1,
-              message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
-              word: cleanWord
-            });
+          // تجاهل الكلمات العامة
+          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+            // استخدام خدمة الترجمة المفتوحة المصدر للكلمات غير المحجوزة
+            try {
+              const translationResult = await smartTranslate(cleanWord);
+              if (translationResult.success && translationResult.translatedText !== cleanWord) {
+                replacement = translationResult.translatedText.toLowerCase().replace(/\s+/g, '_');
+                const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const re = new RegExp(safeWord, 'g');
+                result = result.replace(re, replacement);
+              } else {
+                newErrors.push({
+                  line: index + 1,
+                  message: `كلمة غير معروفة: ${cleanWord} - ${translationResult.error || 'لم تترجم'}`,
+                  word: cleanWord
+                });
+              }
+            } catch (error) {
+              newErrors.push({
+                line: index + 1,
+                message: `كلمة غير معروفة: ${cleanWord}`,
+                word: cleanWord
+              });
+            }
           }
         }
-      });
+      }
       return result;
     };
 
     let translatedLine = '';
     if (stringRanges.length === 0) {
-      translatedLine = processSegment(line);
+      translatedLine = await processSegment(line);
     } else {
       let cursor = 0;
-      stringRanges.forEach((r) => {
+      for (const r of stringRanges) {
         const before = line.slice(cursor, r.start);
-        translatedLine += processSegment(before);
+        translatedLine += await processSegment(before);
         translatedLine += line.slice(r.start, r.end); // keep string literal intact
         cursor = r.end;
-      });
+      }
       if (cursor < line.length) {
-        translatedLine += processSegment(line.slice(cursor));
+        translatedLine += await processSegment(line.slice(cursor));
       }
     }
 
@@ -150,24 +171,26 @@ const validateAndTranslate = (code: string) => {
     }
 
     translatedLines.push(translatedLine);
-  });
+  }
 
   setErrors(newErrors);
   return translatedLines.join('\n');
 };
 
 
-  const handleTranslate = () => {
+  const handleTranslate = async () => {
     if (!arabicCode.trim()) return;
     
     setIsTranslating(true);
     
-    // Simulate processing time
-    setTimeout(() => {
-      const translated = validateAndTranslate(arabicCode);
+    try {
+      const translated = await validateAndTranslate(arabicCode);
       setTranslatedCode(translated);
+    } catch (error) {
+      console.error('Translation error:', error);
+    } finally {
       setIsTranslating(false);
-    }, 1000);
+    }
   };
 
 const highlightErrors = (code: string) => {
@@ -261,6 +284,17 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="mb-4 p-3 bg-gradient-to-r from-arabic-blue/20 to-js-yellow/20 rounded-lg border border-arabic-blue/30">
+            <div className="flex items-center gap-2 text-sm text-arabic-blue">
+              <CheckCircle className="h-4 w-4" />
+              <span className="font-medium">نظام الترجمة المحسن:</span>
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground space-y-1">
+              <p>• ترجمة فورية للكلمات المحجوزة في JavaScript</p>
+              <p>• خدمة ترجمة مفتوحة المصدر للكلمات الأخرى (MyMemory + LibreTranslate)</p>
+              <p>• ترخيص مفتوح يسمح بالاستخدام التجاري</p>
+            </div>
+          </div>
 <div className="relative" onClick={handleHighlighterClick}>
   <div
     ref={overlayRef}
@@ -273,8 +307,32 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
     value={arabicCode}
     onChange={(e) => {
       setArabicCode(e.target.value);
-      // Live validation to highlight errors as you type
-      validateAndTranslate(e.target.value);
+      // Live validation to highlight errors as you type (without translation service for performance)
+      const quickValidate = (code: string) => {
+        const lines = code.split('\n');
+        const newErrors: TranslationError[] = [];
+        
+        lines.forEach((line, index) => {
+          const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
+          arabicWords.forEach((word) => {
+            const cleanWord = word.trim();
+            const normalized = normalizeArabic(cleanWord);
+            const replacement = jsKeywords[normalized];
+
+            if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+              if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+                newErrors.push({
+                  line: index + 1,
+                  message: `كلمة تحتاج ترجمة: ${cleanWord}`,
+                  word: cleanWord
+                });
+              }
+            }
+          });
+        });
+        setErrors(newErrors);
+      };
+      quickValidate(e.target.value);
     }}
     placeholder="اكتب الكود بالعربية هنا...
 
@@ -297,7 +355,7 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
                 أخطاء في الكود:
               </h4>
               {errors.map((error, index) => (
-                <Badge key={index} variant="destructive" className="text-xs">
+                <Badge key={index} variant={error.message.includes('تحتاج ترجمة') ? 'secondary' : 'destructive'} className="text-xs">
                   السطر {error.line}: {error.message}
                 </Badge>
               ))}
