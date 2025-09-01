@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import LineNumberedTextarea from './LineNumberedTextarea';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Code, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -284,57 +285,39 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="mb-4 p-3 bg-gradient-to-r from-arabic-blue/20 to-js-yellow/20 rounded-lg border border-arabic-blue/30">
-            <div className="flex items-center gap-2 text-sm text-arabic-blue">
-              <CheckCircle className="h-4 w-4" />
-              <span className="font-medium">نظام الترجمة المحسن:</span>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground space-y-1">
-              <p>• ترجمة فورية للكلمات المحجوزة في JavaScript</p>
-              <p>• خدمة ترجمة مفتوحة المصدر للكلمات الأخرى (MyMemory + LibreTranslate)</p>
-              <p>• ترخيص مفتوح يسمح بالاستخدام التجاري</p>
-            </div>
-          </div>
-<div className="relative" onClick={handleHighlighterClick}>
-  <div
-    ref={overlayRef}
-    className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-right text-sm leading-6 px-3 py-2 rounded-md pointer-events-none"
-    dir="rtl"
-    dangerouslySetInnerHTML={{ __html: highlightErrors(arabicCode) }}
-  />
-  <Textarea
-    ref={arabicTextareaRef}
-    value={arabicCode}
-    onChange={(e) => {
-      setArabicCode(e.target.value);
-      // Live validation to highlight errors as you type (without translation service for performance)
-      const quickValidate = (code: string) => {
-        const lines = code.split('\n');
-        const newErrors: TranslationError[] = [];
-        
-        lines.forEach((line, index) => {
-          const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
-          arabicWords.forEach((word) => {
-            const cleanWord = word.trim();
-            const normalized = normalizeArabic(cleanWord);
-            const replacement = jsKeywords[normalized];
+          <LineNumberedTextarea
+            ref={arabicTextareaRef}
+            value={arabicCode}
+            onChange={(e) => {
+              setArabicCode(e.target.value);
+              // Live validation to highlight errors as you type (without translation service for performance)
+              const quickValidate = (code: string) => {
+                const lines = code.split('\n');
+                const newErrors: TranslationError[] = [];
+                
+                lines.forEach((line, index) => {
+                  const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
+                  arabicWords.forEach((word) => {
+                    const cleanWord = word.trim();
+                    const normalized = normalizeArabic(cleanWord);
+                    const replacement = jsKeywords[normalized];
 
-            if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-              if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
-                newErrors.push({
-                  line: index + 1,
-                  message: `كلمة تحتاج ترجمة: ${cleanWord}`,
-                  word: cleanWord
+                    if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+                      if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+                        newErrors.push({
+                          line: index + 1,
+                          message: `كلمة تحتاج ترجمة: ${cleanWord}`,
+                          word: cleanWord
+                        });
+                      }
+                    }
+                  });
                 });
-              }
-            }
-          });
-        });
-        setErrors(newErrors);
-      };
-      quickValidate(e.target.value);
-    }}
-    placeholder="اكتب الكود بالعربية هنا...
+                setErrors(newErrors);
+              };
+              quickValidate(e.target.value);
+            }}
+            placeholder="اكتب الكود بالعربية هنا...
 
 مثال:
 متغير اسم = 'أحمد'
@@ -342,11 +325,12 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-    className="min-h-[300px] font-mono text-right bg-transparent border-arabic-blue/30 focus:border-arabic-blue text-transparent caret-transparent px-3 py-2 text-sm leading-6 resize-none overflow-hidden"
-    dir="rtl"
-    style={{ caretColor: 'hsl(var(--foreground))' }}
-  />
-</div>
+            className="border-arabic-blue/30 focus:border-arabic-blue"
+            dir="rtl"
+            overlayContent={highlightErrors(arabicCode)}
+            onOverlayClick={handleHighlighterClick}
+            overlayRef={overlayRef}
+          />
           
           {errors.length > 0 && (
             <div className="space-y-2">
@@ -403,10 +387,10 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
           {translatedCode ? (
             <div className="space-y-4">
               <div className="relative">
-                <Textarea
+                <LineNumberedTextarea
                   value={translatedCode}
                   readOnly
-                  className="min-h-[300px] font-mono bg-background/50 border-js-yellow/30"
+                  className="border-js-yellow/30"
                 />
                 {errors.length === 0 && (
                   <Badge className="absolute top-2 right-2 bg-js-green text-white">
