@@ -85,56 +85,28 @@ const validateAndTranslate = (code: string) => {
       return out;
     };
 
-    const processSegment = (seg: string, insideString: boolean = false) => {
+    const processSegment = (seg: string) => {
       let result = seg;
-      
-      if (insideString) {
-        // Inside strings: only translate Z-wrapped words
-        const zWrappedPattern = /Z([\u0600-\u06FF_]+)Z/g;
-        const zMatches = [...seg.matchAll(zWrappedPattern)];
-        
-        zMatches.forEach(match => {
-          const fullMatch = match[0]; // ZكلمةZ
-          const arabicWord = match[1]; // كلمة
-          const cleanWord = arabicWord.trim();
-          const normalized = normalizeArabic(cleanWord);
-          const replacement = jsKeywords[normalized];
+      const arabicWords = seg.match(/[\u0600-\u06FF_]+/g) || [];
+      arabicWords.forEach((word) => {
+        const cleanWord = word.trim();
+        const normalized = normalizeArabic(cleanWord);
+        const replacement = jsKeywords[normalized];
 
-          if (replacement) {
-            result = result.replace(fullMatch, replacement);
-          } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+        if (replacement) {
+          const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const re = new RegExp(safeWord, 'g');
+          result = result.replace(re, replacement);
+        } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
             newErrors.push({
               line: index + 1,
               message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
               word: cleanWord
             });
           }
-        });
-      } else {
-        // Outside strings: translate all Arabic words directly
-        const arabicPattern = /[\u0600-\u06FF_]+/g;
-        const arabicMatches = [...seg.matchAll(arabicPattern)];
-        
-        arabicMatches.forEach(match => {
-          const arabicWord = match[0];
-          const cleanWord = arabicWord.trim();
-          const normalized = normalizeArabic(cleanWord);
-          const replacement = jsKeywords[normalized];
-
-          if (replacement) {
-            result = result.replace(arabicWord, replacement);
-          } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-            if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على'].includes(normalized)) {
-              newErrors.push({
-                line: index + 1,
-                message: `كلمة غير معروفة في JavaScript: ${cleanWord}`,
-                word: cleanWord
-              });
-            }
-          }
-        });
-      }
-
+        }
+      });
       return result;
     };
 
@@ -145,9 +117,8 @@ const validateAndTranslate = (code: string) => {
       let cursor = 0;
       stringRanges.forEach((r) => {
         const before = line.slice(cursor, r.start);
-        translatedLine += processSegment(before, false); // outside string
-        const stringContent = line.slice(r.start, r.end);
-        translatedLine += processSegment(stringContent, true); // inside string
+        translatedLine += processSegment(before);
+        translatedLine += line.slice(r.start, r.end); // keep string literal intact
         cursor = r.end;
       });
       if (cursor < line.length) {
