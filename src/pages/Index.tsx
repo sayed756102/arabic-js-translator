@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Code, BookOpen } from 'lucide-react';
+import { Code, BookOpen, Facebook, Users, Send, MessageCircle, Globe } from 'lucide-react';
 import CodeTranslator from '@/components/CodeTranslator';
 import JavaScriptBasics from '@/components/JavaScriptBasics';
 import Header from '@/components/Header';
@@ -103,7 +103,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="relative border-t border-border/50 bg-card/30 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-8">
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-6">
             <div className="flex justify-center items-center gap-2">
               <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
               <span className="font-semibold">ZAS-برمجه</span>
@@ -111,6 +111,59 @@ const Index = () => {
             <p className="text-sm text-muted-foreground">
               أداة متطورة لترجمة أكواد JavaScript من العربية إلى الإنجليزية مع كشف الأخطاء
             </p>
+            
+            {/* Social Links */}
+            <div className="flex justify-center items-center gap-4">
+              <a
+                href="https://www.facebook.com/me/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="فيسبوك"
+              >
+                <Facebook className="h-5 w-5" />
+              </a>
+              
+              <a
+                href="https://www.facebook.com/groups/2275552176209029/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="مجموعة فيسبوك"
+              >
+                <Users className="h-5 w-5" />
+              </a>
+              
+              <a
+                href="https://t.me/zaszase"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="تليجرام"
+              >
+                <Send className="h-5 w-5" />
+              </a>
+              
+              <a
+                href="https://whatsapp.com/channel/0029Vb69TZgLI8YQ57JbSw2A"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="واتساب"
+              >
+                <MessageCircle className="h-5 w-5" />
+              </a>
+              
+              <a
+                href="https://zas-code-journey.vercel.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="الموقع"
+              >
+                <Globe className="h-5 w-5" />
+              </a>
+            </div>
           </div>
         </div>
       </footer>

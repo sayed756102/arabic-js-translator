@@ -74,29 +74,16 @@ const Header: React.FC = () => {
                 </>
               )}
               {panelType === 'contact' && (
-                <div className="space-y-3 text-right">
-                  <div>
-                    <div className="font-medium">الدعم</div>
-                    <p className="text-muted-foreground">تحدث معنا لإرسال دعم لجعل المشروع أكبر.</p>
-                    <a href="mailto:anwersayed531@gmail.com?subject=%D8%AF%D8%B9%D9%85%20ZAS-%D8%A8%D8%B1%D9%85%D8%AC%D9%87" className="text-primary underline">
-                      anwersayed531@gmail.com
-                    </a>
-                  </div>
-                  <div>
-                    <div className="font-medium">الإبلاغ عن خطأ</div>
-                    <a
-                      href="mailto:anwersayed531@gmail.com?subject=ZAS-%D8%A8%D8%B1%D9%85%D8%AC%D9%87%20-%20%D8%AA%D8%A8%D9%84%D9%8A%D8%BA%20%D8%B9%D9%86%20%D8%AE%D8%B7%D8%A3&body=%D9%88%D8%B5%D9%81%20%D8%A7%D9%84%D8%AE%D8%B7%D8%A3%3A%0A%D9%82%D8%B7%D8%B9%D8%A9%20%D8%A7%D9%84%D9%83%D9%88%D8%AF%3A%0A"
-                      className="text-primary underline"
-                    >
-                      أبلغ عن خطأ عبر البريد
-                    </a>
-                  </div>
-                  <div>
-                    <div className="font-medium">البريد الإلكتروني</div>
-                    <a href="mailto:anwersayed531@gmail.com" className="text-primary underline">
-                      anwersayed531@gmail.com
-                    </a>
-                  </div>
+                <div className="text-center">
+                  <div className="font-medium mb-3">تواصل معنا</div>
+                  <a
+                    href="https://linktr.ee/ZASZASZ"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
+                  >
+                    زيارة صفحة التواصل
+                  </a>
                 </div>
               )}
             </SheetDescription>
