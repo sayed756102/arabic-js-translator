@@ -77,7 +77,7 @@ const LineNumberedTextarea = forwardRef<HTMLTextAreaElement, LineNumberedTextare
             onChange={onChange}
             placeholder={placeholder}
             className={cn(
-              "min-h-[400px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0",
+              "min-h-[500px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0",
               overlayContent && "text-transparent caret-transparent bg-transparent",
               className
             )}
