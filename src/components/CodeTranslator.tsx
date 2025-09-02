@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LineNumberedTextarea from './LineNumberedTextarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Code, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowRight, Code, AlertCircle, CheckCircle, Maximize2, Minimize2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { jsKeywordsDatabase } from '@/data/translationDatabase';
 import { smartTranslate } from '@/services/translationService';
@@ -20,6 +20,7 @@ const CodeTranslator = () => {
   const [translatedCode, setTranslatedCode] = useState('');
   const [errors, setErrors] = useState<TranslationError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -256,97 +257,6 @@ const highlightErrors = (code: string) => {
   return resultLines.join('\n');
 };
 
-// Syntax highlighting function for JavaScript code
-const highlightJavaScript = (code: string) => {
-  const escapeHtml = (s: string) =>
-    s.replace(/&/g, '&amp;')
-     .replace(/</g, '&lt;')
-     .replace(/>/g, '&gt;');
-
-  const lines = code.split('\n');
-  
-  const jsKeywordsList = [
-    'const', 'let', 'var', 'function', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'default',
-    'return', 'break', 'continue', 'try', 'catch', 'finally', 'throw', 'new', 'this', 'super',
-    'class', 'extends', 'import', 'export', 'from', 'as', 'default', 'async', 'await', 'typeof',
-    'instanceof', 'in', 'of', 'delete', 'void', 'null', 'undefined', 'true', 'false'
-  ];
-
-  const resultLines = lines.map((line) => {
-    const ranges = getStringRanges(line);
-    let result = '';
-    let cursor = 0;
-
-    // Process string literals first
-    ranges.forEach(range => {
-      // Process code before string
-      if (cursor < range.start) {
-        const beforeString = line.slice(cursor, range.start);
-        result += highlightCodeSegment(beforeString, jsKeywordsList);
-      }
-      // Add string literal in green
-      const stringContent = line.slice(range.start, range.end);
-      result += `<span class="text-js-green">${escapeHtml(stringContent)}</span>`;
-      cursor = range.end;
-    });
-
-    // Process remaining code after last string
-    if (cursor < line.length) {
-      const remainingCode = line.slice(cursor);
-      result += highlightCodeSegment(remainingCode, jsKeywordsList);
-    }
-
-    return result || escapeHtml(line);
-  });
-
-  return resultLines.join('\n');
-};
-
-// Helper function to highlight code segments (excluding strings)
-const highlightCodeSegment = (segment: string, keywords: string[]) => {
-  const escapeHtml = (s: string) =>
-    s.replace(/&/g, '&amp;')
-     .replace(/</g, '&lt;')
-     .replace(/>/g, '&gt;');
-
-  let result = escapeHtml(segment);
-
-  // Highlight JavaScript keywords in blue
-  keywords.forEach(keyword => {
-    const regex = new RegExp(`\\b${keyword}\\b`, 'g');
-    result = result.replace(regex, `<span class="text-js-blue font-semibold">${keyword}</span>`);
-  });
-
-  // Highlight numbers and operators in yellow
-  result = result.replace(/\b\d+(\.\d+)?\b/g, '<span class="text-js-yellow">$&</span>'); // numbers
-  result = result.replace(/[+\-*/%=<>!&|^~?:;]/g, '<span class="text-js-yellow">$&</span>'); // operators
-  result = result.replace(/[(){}\[\]]/g, '<span class="text-js-yellow">$&</span>'); // brackets
-
-  // Highlight other words in green
-  result = result.replace(/\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g, (match) => {
-    // Don't re-highlight already highlighted keywords
-    if (keywords.includes(match) || match.includes('span')) {
-      return match;
-    }
-    return `<span class="text-js-green">${match}</span>`;
-  });
-
-  return result;
-};
-
-// Combined highlighting function that includes both syntax and errors
-const highlightWithSyntax = (code: string, isJavaScript = false) => {
-  let syntaxHighlighted = isJavaScript ? highlightJavaScript(code) : code;
-  
-  if (!isJavaScript && errors.length > 0) {
-    // Apply error highlighting on top of syntax highlighting for Arabic code
-    return highlightErrors(code);
-  }
-  
-  return syntaxHighlighted;
-};
-
-
 const handleHighlighterClick = (e: React.MouseEvent) => {
   const ov = overlayRef.current;
   if (!ov) return;
@@ -364,50 +274,74 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   }
 };
 
-  return (
-    <div className="grid lg:grid-cols-2 gap-6">
-      {/* Arabic Input */}
-      <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-arabic-blue">
-            <Code className="h-5 w-5" />
-            الكود بالعربية
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <LineNumberedTextarea
-            ref={arabicTextareaRef}
-            value={arabicCode}
-            onChange={(e) => {
-              setArabicCode(e.target.value);
-              // Live validation to highlight errors as you type (without translation service for performance)
-              const quickValidate = (code: string) => {
-                const lines = code.split('\n');
-                const newErrors: TranslationError[] = [];
-                
-                lines.forEach((line, index) => {
-                  const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
-                  arabicWords.forEach((word) => {
-                    const cleanWord = word.trim();
-                    const normalized = normalizeArabic(cleanWord);
-                    const replacement = jsKeywords[normalized];
 
-                    if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-                      if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
-                        newErrors.push({
-                          line: index + 1,
-                          message: `كلمة تحتاج ترجمة: ${cleanWord}`,
-                          word: cleanWord
-                        });
+  return (
+    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background p-4' : ''}`}>
+      {/* Fullscreen Toggle Button */}
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsFullscreen(!isFullscreen)}
+          className="gap-2"
+        >
+          {isFullscreen ? (
+            <>
+              <Minimize2 className="h-4 w-4" />
+              تصغير
+            </>
+          ) : (
+            <>
+              <Maximize2 className="h-4 w-4" />
+              ملء الشاشة
+            </>
+          )}
+        </Button>
+      </div>
+      
+      <div className={`grid gap-6 ${isFullscreen ? 'grid-cols-1 xl:grid-cols-2 h-[calc(100vh-8rem)]' : 'lg:grid-cols-2'}`}>
+        {/* Arabic Input */}
+        <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-arabic-blue">
+              <Code className="h-5 w-5" />
+              الكود بالعربية
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <LineNumberedTextarea
+              ref={arabicTextareaRef}
+              value={arabicCode}
+              onChange={(e) => {
+                setArabicCode(e.target.value);
+                // Live validation to highlight errors as you type (without translation service for performance)
+                const quickValidate = (code: string) => {
+                  const lines = code.split('\n');
+                  const newErrors: TranslationError[] = [];
+                  
+                  lines.forEach((line, index) => {
+                    const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
+                    arabicWords.forEach((word) => {
+                      const cleanWord = word.trim();
+                      const normalized = normalizeArabic(cleanWord);
+                      const replacement = jsKeywords[normalized];
+
+                      if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+                        if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+                          newErrors.push({
+                            line: index + 1,
+                            message: `كلمة تحتاج ترجمة: ${cleanWord}`,
+                            word: cleanWord
+                          });
+                        }
                       }
-                    }
+                    });
                   });
-                });
-                setErrors(newErrors);
-              };
-              quickValidate(e.target.value);
-            }}
-            placeholder="اكتب الكود بالعربية هنا...
+                  setErrors(newErrors);
+                };
+                quickValidate(e.target.value);
+              }}
+              placeholder="اكتب الكود بالعربية هنا...
 
 مثال:
 متغير اسم = 'أحمد'
@@ -415,27 +349,27 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-            className="border-arabic-blue/30 focus:border-arabic-blue"
-            dir="rtl"
-            overlayContent={highlightErrors(arabicCode)}
-            onOverlayClick={handleHighlighterClick}
-            overlayRef={overlayRef}
-          />
-          
-          {errors.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-error-red flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                أخطاء في الكود:
-              </h4>
-              {errors.map((error, index) => (
-                <Badge key={index} variant={error.message.includes('تحتاج ترجمة') ? 'secondary' : 'destructive'} className="text-xs">
-                  السطر {error.line}: {error.message}
-                </Badge>
-              ))}
-            </div>
-          )}
-          
+              className={`border-arabic-blue/30 focus:border-arabic-blue ${isFullscreen ? 'min-h-[60vh]' : ''}`}
+              dir="rtl"
+              overlayContent={highlightErrors(arabicCode)}
+              onOverlayClick={handleHighlighterClick}
+              overlayRef={overlayRef}
+            />
+            
+            {errors.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-error-red flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  أخطاء في الكود:
+                </h4>
+                {errors.map((error, index) => (
+                  <Badge key={index} variant={error.message.includes('تحتاج ترجمة') ? 'secondary' : 'destructive'} className="text-xs">
+                    السطر {error.line}: {error.message}
+                  </Badge>
+                ))}
+              </div>
+            )}
+            
 <div className="grid grid-cols-1 gap-2">
   <Button 
     onClick={handleTranslate} 
@@ -462,55 +396,55 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
     نسخ المكتوب
   </Button>
 </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* English Output */}
-      <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-js-yellow">
-            <Code className="h-5 w-5" />
-            JavaScript Code
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {translatedCode ? (
-            <div className="space-y-4">
-              <div className="relative">
-                <LineNumberedTextarea
-                  value={translatedCode}
-                  readOnly
-                  className="border-js-yellow/30"
-                  overlayContent={highlightWithSyntax(translatedCode, true)}
-                />
-                {errors.length === 0 && (
-                  <Badge className="absolute top-2 right-2 bg-js-green text-white">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    جاهز للتشغيل
-                  </Badge>
-                )}
+        {/* English Output */}
+        <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-js-yellow">
+              <Code className="h-5 w-5" />
+              JavaScript Code
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {translatedCode ? (
+              <div className="space-y-4">
+                <div className="relative">
+                  <LineNumberedTextarea
+                    value={translatedCode}
+                    readOnly
+                    className={`border-js-yellow/30 ${isFullscreen ? 'min-h-[60vh]' : ''}`}
+                  />
+                  {errors.length === 0 && (
+                    <Badge className="absolute top-2 right-2 bg-js-green text-white">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      جاهز للتشغيل
+                    </Badge>
+                  )}
+                </div>
+    <Button 
+      onClick={() => {
+        navigator.clipboard.writeText(translatedCode);
+        toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
+      }}
+      variant="outline"
+      className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
+    >
+      نسخ الناتج النهائي
+    </Button>
               </div>
-  <Button 
-    onClick={() => {
-      navigator.clipboard.writeText(translatedCode);
-      toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
-    }}
-    variant="outline"
-    className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
-  >
-    نسخ الناتج النهائي
-  </Button>
-            </div>
-          ) : (
-            <div className="min-h-[300px] flex items-center justify-center text-muted-foreground">
-              <div className="text-center space-y-2">
-                <Code className="h-12 w-12 mx-auto opacity-50" />
-                <p>سيظهر الكود المترجم هنا</p>
+            ) : (
+              <div className={`flex items-center justify-center text-muted-foreground ${isFullscreen ? 'min-h-[60vh]' : 'min-h-[300px]'}`}>
+                <div className="text-center space-y-2">
+                  <Code className="h-12 w-12 mx-auto opacity-50" />
+                  <p>سيظهر الكود المترجم هنا</p>
+                </div>
               </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
