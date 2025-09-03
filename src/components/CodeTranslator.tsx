@@ -4,10 +4,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LineNumberedTextarea from './LineNumberedTextarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Code, AlertCircle, CheckCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowRight, Code, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { jsKeywordsDatabase } from '@/data/translationDatabase';
 import { smartTranslate } from '@/services/translationService';
+import JSZip from 'jszip';
 
 interface TranslationError {
   line: number;
@@ -20,7 +21,6 @@ const CodeTranslator = () => {
   const [translatedCode, setTranslatedCode] = useState('');
   const [errors, setErrors] = useState<TranslationError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -272,76 +272,96 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
       description: message,
     });
   }
-};
+  };
 
+  const handleDownloadZip = async () => {
+    if (!arabicCode.trim() && !translatedCode.trim()) {
+      toast({
+        title: 'لا يوجد محتوى للتحميل',
+        description: 'يرجى كتابة كود أولاً',
+      });
+      return;
+    }
+
+    const zip = new JSZip();
+    
+    if (arabicCode.trim()) {
+      zip.file('arabic_code.txt', arabicCode);
+    }
+    
+    if (translatedCode.trim()) {
+      zip.file('translated_code.js', translatedCode);
+    }
+
+    try {
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = window.URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'zas_code.zip';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'تم التحميل بنجاح',
+        description: 'تم تحميل الملف المضغوط',
+      });
+    } catch (error) {
+      toast({
+        title: 'خطأ في التحميل',
+        description: 'حدث خطأ أثناء إنشاء الملف المضغوط',
+      });
+    }
+  };
 
   return (
-    <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-background p-4' : ''}`}>
-      {/* Fullscreen Toggle Button */}
-      <div className="flex justify-end mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsFullscreen(!isFullscreen)}
-          className="gap-2"
-        >
-          {isFullscreen ? (
-            <>
-              <Minimize2 className="h-4 w-4" />
-              تصغير
-            </>
-          ) : (
-            <>
-              <Maximize2 className="h-4 w-4" />
-              ملء الشاشة
-            </>
-          )}
-        </Button>
-      </div>
-      
-      <div className={`grid gap-6 ${isFullscreen ? 'grid-cols-1 xl:grid-cols-2 h-[calc(100vh-8rem)]' : 'lg:grid-cols-2'}`}>
+    <div>      
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* Arabic Input */}
-        <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-arabic-blue">
-              <Code className="h-5 w-5" />
-              الكود بالعربية
+        <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-slate-800 to-slate-900 text-white">
+            <CardTitle className="flex items-center gap-2 text-sm font-mono">
+              <Code className="h-4 w-4" />
+              Arabic Code Editor
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <LineNumberedTextarea
-              ref={arabicTextareaRef}
-              value={arabicCode}
-              onChange={(e) => {
-                setArabicCode(e.target.value);
-                // Live validation to highlight errors as you type (without translation service for performance)
-                const quickValidate = (code: string) => {
-                  const lines = code.split('\n');
-                  const newErrors: TranslationError[] = [];
-                  
-                  lines.forEach((line, index) => {
-                    const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
-                    arabicWords.forEach((word) => {
-                      const cleanWord = word.trim();
-                      const normalized = normalizeArabic(cleanWord);
-                      const replacement = jsKeywords[normalized];
+          <CardContent className="p-0">
+            <div className="bg-slate-900 text-green-400 font-mono text-sm overflow-auto">
+              <LineNumberedTextarea
+                ref={arabicTextareaRef}
+                value={arabicCode}
+                onChange={(e) => {
+                  setArabicCode(e.target.value);
+                  // Live validation to highlight errors as you type (without translation service for performance)
+                  const quickValidate = (code: string) => {
+                    const lines = code.split('\n');
+                    const newErrors: TranslationError[] = [];
+                    
+                    lines.forEach((line, index) => {
+                      const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
+                      arabicWords.forEach((word) => {
+                        const cleanWord = word.trim();
+                        const normalized = normalizeArabic(cleanWord);
+                        const replacement = jsKeywords[normalized];
 
-                      if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-                        if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
-                          newErrors.push({
-                            line: index + 1,
-                            message: `كلمة تحتاج ترجمة: ${cleanWord}`,
-                            word: cleanWord
-                          });
+                        if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+                          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+                            newErrors.push({
+                              line: index + 1,
+                              message: `كلمة تحتاج ترجمة: ${cleanWord}`,
+                              word: cleanWord
+                            });
+                          }
                         }
-                      }
+                      });
                     });
-                  });
-                  setErrors(newErrors);
-                };
-                quickValidate(e.target.value);
-              }}
-              placeholder="اكتب الكود بالعربية هنا...
+                    setErrors(newErrors);
+                  };
+                  quickValidate(e.target.value);
+                }}
+                placeholder="اكتب الكود بالعربية هنا...
 
 مثال:
 متغير اسم = 'أحمد'
@@ -349,16 +369,18 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-              className={`border-arabic-blue/30 focus:border-arabic-blue ${isFullscreen ? 'min-h-[60vh]' : ''}`}
-              dir="rtl"
-              overlayContent={highlightErrors(arabicCode)}
-              onOverlayClick={handleHighlighterClick}
-              overlayRef={overlayRef}
-            />
+                className="min-h-[400px] w-full bg-slate-900 text-green-400 border-0 resize-none font-mono text-sm overflow-x-auto whitespace-nowrap"
+                style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
+                dir="rtl"
+                overlayContent={highlightErrors(arabicCode)}
+                onOverlayClick={handleHighlighterClick}
+                overlayRef={overlayRef}
+              />
+            </div>
             
             {errors.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-error-red flex items-center gap-2">
+              <div className="p-4 space-y-2 bg-red-900/20 border-t border-red-500/20">
+                <h4 className="text-sm font-medium text-red-400 flex items-center gap-2">
                   <AlertCircle className="h-4 w-4" />
                   أخطاء في الكود:
                 </h4>
@@ -370,51 +392,64 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
               </div>
             )}
             
-<div className="grid grid-cols-1 gap-2">
-  <Button 
-    onClick={handleTranslate} 
-    disabled={!arabicCode.trim() || isTranslating}
-    className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
-  >
-    {isTranslating ? (
-      'جاري الترجمة...'
-    ) : (
-      <>
-        ترجم إلى JavaScript
-        <ArrowRight className="mr-2 h-4 w-4" />
-      </>
-    )}
-  </Button>
-  <Button 
-    onClick={() => {
-      navigator.clipboard.writeText(arabicCode);
-      toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
-    }}
-    variant="outline"
-    className="w-full border-arabic-blue/30 hover:bg-arabic-blue/10"
-  >
-    نسخ المكتوب
-  </Button>
-</div>
+            <div className="p-4 bg-slate-800 border-t border-slate-700">
+              <div className="grid grid-cols-1 gap-2">
+                <Button 
+                  onClick={handleTranslate} 
+                  disabled={!arabicCode.trim() || isTranslating}
+                  className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
+                >
+                  {isTranslating ? (
+                    'جاري الترجمة...'
+                  ) : (
+                    <>
+                      ترجم إلى JavaScript
+                      <ArrowRight className="mr-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(arabicCode);
+                      toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
+                    }}
+                    variant="outline"
+                    className="w-full border-arabic-blue/30 hover:bg-arabic-blue/10"
+                  >
+                    نسخ المكتوب
+                  </Button>
+                  <Button 
+                    onClick={handleDownloadZip}
+                    variant="outline"
+                    className="w-full border-green-500/30 hover:bg-green-500/10 gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    تحميل ZIP
+                  </Button>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* English Output */}
-        <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-js-yellow">
-              <Code className="h-5 w-5" />
-              JavaScript Code
+        <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20 overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+            <CardTitle className="flex items-center gap-2 text-sm font-mono">
+              <Code className="h-4 w-4" />
+              JavaScript Output
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {translatedCode ? (
-              <div className="space-y-4">
-                <div className="relative">
+              <div>
+                <div className="relative bg-slate-900">
                   <LineNumberedTextarea
                     value={translatedCode}
                     readOnly
-                    className={`border-js-yellow/30 ${isFullscreen ? 'min-h-[60vh]' : ''}`}
+                    className="min-h-[400px] w-full bg-slate-900 text-blue-300 border-0 resize-none font-mono text-sm overflow-x-auto whitespace-nowrap"
+                    style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
                   />
                   {errors.length === 0 && (
                     <Badge className="absolute top-2 right-2 bg-js-green text-white">
@@ -423,19 +458,21 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
                     </Badge>
                   )}
                 </div>
-    <Button 
-      onClick={() => {
-        navigator.clipboard.writeText(translatedCode);
-        toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
-      }}
-      variant="outline"
-      className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
-    >
-      نسخ الناتج النهائي
-    </Button>
+                <div className="p-4 bg-slate-800 border-t border-slate-700">
+                  <Button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(translatedCode);
+                      toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
+                    }}
+                    variant="outline"
+                    className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
+                  >
+                    نسخ الناتج النهائي
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className={`flex items-center justify-center text-muted-foreground ${isFullscreen ? 'min-h-[60vh]' : 'min-h-[300px]'}`}>
+              <div className="flex items-center justify-center text-muted-foreground min-h-[400px] bg-slate-900">
                 <div className="text-center space-y-2">
                   <Code className="h-12 w-12 mx-auto opacity-50" />
                   <p>سيظهر الكود المترجم هنا</p>
