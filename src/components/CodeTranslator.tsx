@@ -320,48 +320,47 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
     <div>      
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Arabic Input */}
-        <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-slate-800 to-slate-900 text-white">
-            <CardTitle className="flex items-center gap-2 text-sm font-mono">
+        <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-right">
               <Code className="h-4 w-4" />
-              Arabic Code Editor
+              كتابة الكود بالعربية
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
-            <div className="bg-slate-900 text-green-400 font-mono text-sm overflow-auto">
-              <LineNumberedTextarea
-                ref={arabicTextareaRef}
-                value={arabicCode}
-                onChange={(e) => {
-                  setArabicCode(e.target.value);
-                  // Live validation to highlight errors as you type (without translation service for performance)
-                  const quickValidate = (code: string) => {
-                    const lines = code.split('\n');
-                    const newErrors: TranslationError[] = [];
-                    
-                    lines.forEach((line, index) => {
-                      const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
-                      arabicWords.forEach((word) => {
-                        const cleanWord = word.trim();
-                        const normalized = normalizeArabic(cleanWord);
-                        const replacement = jsKeywords[normalized];
+          <CardContent className="p-4">
+            <LineNumberedTextarea
+              ref={arabicTextareaRef}
+              value={arabicCode}
+              onChange={(e) => {
+                setArabicCode(e.target.value);
+                // Live validation to highlight errors as you type (without translation service for performance)
+                const quickValidate = (code: string) => {
+                  const lines = code.split('\n');
+                  const newErrors: TranslationError[] = [];
+                  
+                  lines.forEach((line, index) => {
+                    const arabicWords = line.match(/[\u0600-\u06FF_]+/g) || [];
+                    arabicWords.forEach((word) => {
+                      const cleanWord = word.trim();
+                      const normalized = normalizeArabic(cleanWord);
+                      const replacement = jsKeywords[normalized];
 
-                        if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-                          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
-                            newErrors.push({
-                              line: index + 1,
-                              message: `كلمة تحتاج ترجمة: ${cleanWord}`,
-                              word: cleanWord
-                            });
-                          }
+                      if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
+                        if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+                          newErrors.push({
+                            line: index + 1,
+                            message: `كلمة تحتاج ترجمة: ${cleanWord}`,
+                            word: cleanWord
+                          });
                         }
-                      });
+                      }
                     });
-                    setErrors(newErrors);
-                  };
-                  quickValidate(e.target.value);
-                }}
-                placeholder="اكتب الكود بالعربية هنا...
+                  });
+                  setErrors(newErrors);
+                };
+                quickValidate(e.target.value);
+              }}
+              placeholder="اكتب الكود بالعربية هنا...
 
 مثال:
 متغير اسم = 'أحمد'
@@ -369,86 +368,86 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-                className="min-h-[400px] w-full bg-slate-900 text-green-400 border-0 resize-none font-mono text-sm overflow-x-auto whitespace-nowrap"
-                style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
-                dir="rtl"
-                overlayContent={highlightErrors(arabicCode)}
-                onOverlayClick={handleHighlighterClick}
-                overlayRef={overlayRef}
-              />
-            </div>
+              className="min-h-[400px] overflow-x-auto whitespace-nowrap"
+              style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
+              dir="rtl"
+              overlayContent={highlightErrors(arabicCode)}
+              onOverlayClick={handleHighlighterClick}
+              overlayRef={overlayRef}
+            />
+            
             
             {errors.length > 0 && (
-              <div className="p-4 space-y-2 bg-red-900/20 border-t border-red-500/20">
-                <h4 className="text-sm font-medium text-red-400 flex items-center gap-2">
+              <div className="mt-4 p-3 bg-destructive/10 rounded-md border border-destructive/20">
+                <h4 className="text-sm font-medium text-destructive flex items-center gap-2 mb-2">
                   <AlertCircle className="h-4 w-4" />
                   أخطاء في الكود:
                 </h4>
-                {errors.map((error, index) => (
-                  <Badge key={index} variant={error.message.includes('تحتاج ترجمة') ? 'secondary' : 'destructive'} className="text-xs">
-                    السطر {error.line}: {error.message}
-                  </Badge>
-                ))}
+                <div className="space-y-1">
+                  {errors.map((error, index) => (
+                    <Badge key={index} variant={error.message.includes('تحتاج ترجمة') ? 'secondary' : 'destructive'} className="text-xs">
+                      السطر {error.line}: {error.message}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
             
-            <div className="p-4 bg-slate-800 border-t border-slate-700">
-              <div className="grid grid-cols-1 gap-2">
+            <div className="mt-4 space-y-2">
+              <Button 
+                onClick={handleTranslate} 
+                disabled={!arabicCode.trim() || isTranslating}
+                className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
+              >
+                {isTranslating ? (
+                  'جاري الترجمة...'
+                ) : (
+                  <>
+                    ترجم إلى JavaScript
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
+              <div className="grid grid-cols-2 gap-2">
                 <Button 
-                  onClick={handleTranslate} 
-                  disabled={!arabicCode.trim() || isTranslating}
-                  className="w-full bg-arabic-blue hover:bg-arabic-blue/90"
+                  onClick={() => {
+                    navigator.clipboard.writeText(arabicCode);
+                    toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
+                  }}
+                  variant="outline"
+                  className="w-full"
                 >
-                  {isTranslating ? (
-                    'جاري الترجمة...'
-                  ) : (
-                    <>
-                      ترجم إلى JavaScript
-                      <ArrowRight className="mr-2 h-4 w-4" />
-                    </>
-                  )}
+                  نسخ المكتوب
                 </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(arabicCode);
-                      toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
-                    }}
-                    variant="outline"
-                    className="w-full border-arabic-blue/30 hover:bg-arabic-blue/10"
-                  >
-                    نسخ المكتوب
-                  </Button>
-                  <Button 
-                    onClick={handleDownloadZip}
-                    variant="outline"
-                    className="w-full border-green-500/30 hover:bg-green-500/10 gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    تحميل ZIP
-                  </Button>
-                </div>
+                <Button 
+                  onClick={handleDownloadZip}
+                  variant="outline"
+                  className="w-full gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  تحميل ZIP
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
 
         {/* English Output */}
-        <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20 overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
-            <CardTitle className="flex items-center gap-2 text-sm font-mono">
+        <Card className="bg-gradient-to-br from-js-yellow/10 to-js-green/10 border-js-yellow/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               <Code className="h-4 w-4" />
-              JavaScript Output
+              الناتج النهائي (JavaScript)
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-4">
             {translatedCode ? (
-              <div>
-                <div className="relative bg-slate-900">
+              <div className="space-y-4">
+                <div className="relative">
                   <LineNumberedTextarea
                     value={translatedCode}
                     readOnly
-                    className="min-h-[400px] w-full bg-slate-900 text-blue-300 border-0 resize-none font-mono text-sm overflow-x-auto whitespace-nowrap"
+                    className="min-h-[400px] overflow-x-auto whitespace-nowrap"
                     style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
                   />
                   {errors.length === 0 && (
@@ -458,21 +457,19 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
                     </Badge>
                   )}
                 </div>
-                <div className="p-4 bg-slate-800 border-t border-slate-700">
-                  <Button 
-                    onClick={() => {
-                      navigator.clipboard.writeText(translatedCode);
-                      toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
-                    }}
-                    variant="outline"
-                    className="w-full border-js-yellow/30 hover:bg-js-yellow/10"
-                  >
-                    نسخ الناتج النهائي
-                  </Button>
-                </div>
+                <Button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(translatedCode);
+                    toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
+                  }}
+                  variant="outline"
+                  className="w-full"
+                >
+                  نسخ الناتج النهائي
+                </Button>
               </div>
             ) : (
-              <div className="flex items-center justify-center text-muted-foreground min-h-[400px] bg-slate-900">
+              <div className="flex items-center justify-center text-muted-foreground min-h-[400px]">
                 <div className="text-center space-y-2">
                   <Code className="h-12 w-12 mx-auto opacity-50" />
                   <p>سيظهر الكود المترجم هنا</p>
