@@ -16,10 +16,19 @@ interface TranslationError {
   word: string;
 }
 
+interface CodeError {
+  line: number;
+  message: string;
+  severity: 'error' | 'warning';
+  suggestion: string;
+  type: string;
+}
+
 const CodeTranslator = () => {
   const [arabicCode, setArabicCode] = useState('');
   const [translatedCode, setTranslatedCode] = useState('');
   const [errors, setErrors] = useState<TranslationError[]>([]);
+  const [codeErrors, setCodeErrors] = useState<CodeError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
 
   const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -188,6 +197,13 @@ const validateAndTranslate = async (code: string) => {
     try {
       const translated = await validateAndTranslate(arabicCode);
       setTranslatedCode(translated);
+      
+      // Auto-validate the translated code
+      setTimeout(() => {
+        const detectedErrors = validateJavaScriptCode(translated);
+        setCodeErrors(detectedErrors);
+      }, 100);
+      
     } catch (error) {
       console.error('Translation error:', error);
     } finally {
@@ -272,49 +288,194 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
       description: message,
     });
   }
-  };
+};
 
-  const handleDownloadZip = async () => {
-    if (!arabicCode.trim() && !translatedCode.trim()) {
-      toast({
-        title: 'لا يوجد محتوى للتحميل',
-        description: 'يرجى كتابة كود أولاً',
+const validateJavaScriptCode = (code: string): CodeError[] => {
+  const errors: CodeError[] = [];
+  const lines = code.split('\n');
+
+  lines.forEach((line, index) => {
+    const lineNumber = index + 1;
+    const trimmedLine = line.trim();
+
+    // Check for syntax errors
+    // Missing semicolons
+    if (trimmedLine && !trimmedLine.endsWith(';') && !trimmedLine.endsWith('{') && 
+        !trimmedLine.endsWith('}') && !trimmedLine.startsWith('//') && 
+        !trimmedLine.startsWith('/*') && !trimmedLine.includes('//') &&
+        trimmedLine !== '' && !trimmedLine.endsWith(',') && !trimmedLine.endsWith('(') &&
+        !trimmedLine.endsWith(')') && !trimmedLine.includes('if') && 
+        !trimmedLine.includes('else') && !trimmedLine.includes('for') &&
+        !trimmedLine.includes('while') && !trimmedLine.includes('function') &&
+        !trimmedLine.includes('const') && !trimmedLine.includes('let') &&
+        !trimmedLine.includes('var') && trimmedLine.includes('=')) {
+      errors.push({
+        line: lineNumber,
+        message: 'مفقود علامة الفاصلة المنقوطة (;)',
+        severity: 'error',
+        suggestion: 'أضف ; في نهاية السطر',
+        type: 'syntax'
       });
-      return;
     }
 
-    const zip = new JSZip();
+    // Check for undefined variables
+    if (trimmedLine.includes('console.log') && !trimmedLine.includes('console.log(')) {
+      errors.push({
+        line: lineNumber,
+        message: 'خطأ في استخدام console.log',
+        severity: 'error',
+        suggestion: 'استخدم console.log() مع أقواس',
+        type: 'syntax'
+      });
+    }
+
+    // Check for unmatched brackets
+    const openBrackets = (line.match(/\{/g) || []).length;
+    const closeBrackets = (line.match(/\}/g) || []).length;
+    const openParens = (line.match(/\(/g) || []).length;
+    const closeParens = (line.match(/\)/g) || []).length;
+
+    if (openBrackets > closeBrackets && !lines.slice(index + 1).some(l => l.includes('}'))) {
+      errors.push({
+        line: lineNumber,
+        message: 'قوس معقوف مفتوح غير مغلق',
+        severity: 'error',
+        suggestion: 'أضف } لإغلاق القوس',
+        type: 'syntax'
+      });
+    }
+
+    if (openParens > closeParens) {
+      errors.push({
+        line: lineNumber,
+        message: 'قوس عادي مفتوح غير مغلق',
+        severity: 'error',
+        suggestion: 'أضف ) لإغلاق القوس',
+        type: 'syntax'
+      });
+    }
+
+    // Check for common mistakes
+    if (trimmedLine.includes('function') && !trimmedLine.includes('()') && !trimmedLine.includes('(')) {
+      errors.push({
+        line: lineNumber,
+        message: 'دالة بدون أقواس',
+        severity: 'warning',
+        suggestion: 'أضف () بعد اسم الدالة',
+        type: 'best-practice'
+      });
+    }
+
+    // Check for reserved words misuse
+    if (trimmedLine.includes('class') || trimmedLine.includes('interface')) {
+      errors.push({
+        line: lineNumber,
+        message: 'استخدام كلمة محجوزة متقدمة',
+        severity: 'warning',
+        suggestion: 'تأكد من الاستخدام الصحيح للكلمة المحجوزة',
+        type: 'advanced'
+      });
+    }
+
+    // Check for potential runtime errors
+    if (trimmedLine.includes('.length') && !trimmedLine.includes('if')) {
+      errors.push({
+        line: lineNumber,
+        message: 'تحقق من وجود المصفوفة قبل استخدام .length',
+        severity: 'warning',
+        suggestion: 'استخدم if للتحقق من وجود المصفوفة أولاً',
+        type: 'runtime'
+      });
+    }
+  });
+
+  return errors;
+};
+
+const handleCodeValidation = () => {
+  if (!translatedCode.trim()) {
+    toast({
+      title: 'لا يوجد كود للفحص',
+      description: 'يرجى ترجمة الكود أولاً',
+    });
+    return;
+  }
+
+  const detectedErrors = validateJavaScriptCode(translatedCode);
+  setCodeErrors(detectedErrors);
+
+  if (detectedErrors.length === 0) {
+    toast({
+      title: '✅ الكود سليم',
+      description: 'لا توجد أخطاء في الكود - جاهز للنشر!',
+    });
+  } else {
+    toast({
+      title: `⚠️ تم العثور على ${detectedErrors.length} خطأ`,
+      description: 'يرجى مراجعة الأخطاء أدناه',
+    });
+  }
+};
+
+const handleDownloadZip = async () => {
+  if (!translatedCode.trim()) {
+    toast({
+      title: 'لا يوجد كود نهائي للتحميل',
+      description: 'يرجى ترجمة الكود أولاً',
+    });
+    return;
+  }
+
+  const zip = new JSZip();
+  
+  // Add the main JavaScript file
+  zip.file('main.js', translatedCode);
+  
+  // Add a basic HTML file to test the code
+  const htmlContent = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مشروع ZAS Code</title>
+</head>
+<body>
+    <h1>مشروع ZAS Code</h1>
+    <script src="main.js"></script>
+</body>
+</html>`;
+  zip.file('index.html', htmlContent);
+  
+  // Add error report if there are errors
+  if (codeErrors.length > 0) {
+    const errorReport = codeErrors.map(err => 
+      `السطر ${err.line}: ${err.message} - ${err.suggestion}`
+    ).join('\n');
+    zip.file('error_report.txt', errorReport);
+  }
+
+  try {
+    const content = await zip.generateAsync({ type: 'blob' });
+    const url = window.URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'zas_project.zip';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
     
-    if (arabicCode.trim()) {
-      zip.file('arabic_code.txt', arabicCode);
-    }
-    
-    if (translatedCode.trim()) {
-      zip.file('translated_code.js', translatedCode);
-    }
-
-    try {
-      const content = await zip.generateAsync({ type: 'blob' });
-      const url = window.URL.createObjectURL(content);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'zas_code.zip';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      toast({
-        title: 'تم التحميل بنجاح',
-        description: 'تم تحميل الملف المضغوط',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطأ في التحميل',
-        description: 'حدث خطأ أثناء إنشاء الملف المضغوط',
-      });
-    }
-  };
+    toast({
+      title: 'تم التحميل بنجاح',
+      description: 'تم تحميل المشروع كاملاً مع ملف HTML للتجريب',
+    });
+  } catch (error) {
+    toast({
+      title: 'خطأ في التحميل',
+      description: 'حدث خطأ أثناء إنشاء الملف المضغوط',
+    });
+  }
+};
 
   return (
     <div>      
@@ -442,32 +603,77 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
           </CardHeader>
           <CardContent className="p-4">
             {translatedCode ? (
-              <div className="space-y-4">
-                <div className="relative">
-                  <LineNumberedTextarea
-                    value={translatedCode}
-                    readOnly
-                    className="min-h-[400px] overflow-x-auto whitespace-nowrap"
-                    style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
-                  />
-                  {errors.length === 0 && (
-                    <Badge className="absolute top-2 right-2 bg-js-green text-white">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      جاهز للتشغيل
-                    </Badge>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <LineNumberedTextarea
+                      value={translatedCode}
+                      readOnly
+                      className="min-h-[400px] overflow-x-auto whitespace-nowrap"
+                      style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
+                    />
+                    {errors.length === 0 && codeErrors.length === 0 && (
+                      <Badge className="absolute top-2 right-2 bg-js-green text-white">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        جاهز للتشغيل
+                      </Badge>
+                    )}
+                    {codeErrors.length > 0 && (
+                      <Badge className="absolute top-2 right-2 bg-destructive text-white">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        {codeErrors.length} خطأ
+                      </Badge>
+                    )}
+                  </div>
+
+                  {/* Code Errors Display */}
+                  {codeErrors.length > 0 && (
+                    <div className="p-3 bg-destructive/10 rounded-md border border-destructive/20">
+                      <h4 className="text-sm font-medium text-destructive flex items-center gap-2 mb-3">
+                        <AlertCircle className="h-4 w-4" />
+                        أخطاء في الكود النهائي:
+                      </h4>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {codeErrors.map((error, index) => (
+                          <div key={index} className="p-2 bg-background/50 rounded-sm border-r-2 border-r-destructive">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                <Badge 
+                                  variant={error.severity === 'error' ? 'destructive' : 'secondary'} 
+                                  className="text-xs mb-1"
+                                >
+                                  السطر {error.line} - {error.type}
+                                </Badge>
+                                <p className="text-sm text-destructive font-medium">{error.message}</p>
+                                <p className="text-xs text-muted-foreground mt-1">💡 {error.suggestion}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(translatedCode);
+                        toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
+                      }}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      نسخ الناتج النهائي
+                    </Button>
+                    <Button 
+                      onClick={handleCodeValidation}
+                      variant="outline"
+                      className="w-full gap-2"
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                      فحص الأخطاء
+                    </Button>
+                  </div>
                 </div>
-                <Button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(translatedCode);
-                    toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
-                  }}
-                  variant="outline"
-                  className="w-full"
-                >
-                  نسخ الناتج النهائي
-                </Button>
-              </div>
             ) : (
               <div className="flex items-center justify-center text-muted-foreground min-h-[400px]">
                 <div className="text-center space-y-2">
