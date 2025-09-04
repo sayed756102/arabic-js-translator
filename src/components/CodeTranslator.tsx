@@ -290,42 +290,134 @@ const handleHighlighterClick = (e: React.MouseEvent) => {
   }
 };
 
+// ESLint configuration for JavaScript validation
+const eslintConfig = {
+  parserOptions: {
+    ecmaVersion: 2020,
+    sourceType: 'module'
+  },
+  env: {
+    browser: true,
+    node: true,
+    es6: true
+  },
+  rules: {
+    // Syntax rules
+    'no-undef': 'error',
+    'no-unused-vars': 'warn',
+    'no-console': 'off',
+    'semi': ['error', 'always'],
+    'quotes': ['error', 'single'],
+    'no-var': 'error',
+    'prefer-const': 'warn',
+    
+    // Best practices
+    'eqeqeq': 'error',
+    'no-eval': 'error',
+    'no-implied-globals': 'error',
+    'no-new-func': 'error',
+    'no-unreachable': 'error',
+    'no-duplicate-case': 'error',
+    
+    // Style rules
+    'indent': ['error', 2],
+    'comma-dangle': ['error', 'never'],
+    'no-trailing-spaces': 'error',
+    'eol-last': 'error'
+  }
+};
+
 const validateJavaScriptCode = (code: string): CodeError[] => {
   const errors: CodeError[] = [];
   const lines = code.split('\n');
 
+  // Basic syntax validation
   lines.forEach((line, index) => {
     const lineNumber = index + 1;
     const trimmedLine = line.trim();
 
-    // Check for syntax errors
-    // Missing semicolons
-    if (trimmedLine && !trimmedLine.endsWith(';') && !trimmedLine.endsWith('{') && 
-        !trimmedLine.endsWith('}') && !trimmedLine.startsWith('//') && 
-        !trimmedLine.startsWith('/*') && !trimmedLine.includes('//') &&
-        trimmedLine !== '' && !trimmedLine.endsWith(',') && !trimmedLine.endsWith('(') &&
-        !trimmedLine.endsWith(')') && !trimmedLine.includes('if') && 
-        !trimmedLine.includes('else') && !trimmedLine.includes('for') &&
-        !trimmedLine.includes('while') && !trimmedLine.includes('function') &&
-        !trimmedLine.includes('const') && !trimmedLine.includes('let') &&
-        !trimmedLine.includes('var') && trimmedLine.includes('=')) {
+    if (!trimmedLine || trimmedLine.startsWith('//') || trimmedLine.startsWith('/*')) {
+      return;
+    }
+
+    // Check for syntax errors with ESLint-like rules
+    
+    // Missing semicolons (semi rule)
+    if (trimmedLine && 
+        !trimmedLine.endsWith(';') && 
+        !trimmedLine.endsWith('{') && 
+        !trimmedLine.endsWith('}') && 
+        !trimmedLine.endsWith(',') && 
+        !trimmedLine.endsWith('(') &&
+        !trimmedLine.endsWith(')') && 
+        !trimmedLine.includes('if') && 
+        !trimmedLine.includes('else') && 
+        !trimmedLine.includes('for') &&
+        !trimmedLine.includes('while') && 
+        !trimmedLine.includes('function') &&
+        (trimmedLine.includes('=') || trimmedLine.includes('return') || 
+         trimmedLine.includes('console.') || trimmedLine.includes('alert('))) {
       errors.push({
         line: lineNumber,
-        message: 'مفقود علامة الفاصلة المنقوطة (;)',
+        message: 'مفقود فاصلة منقوطة (ESLint: semi)',
         severity: 'error',
         suggestion: 'أضف ; في نهاية السطر',
-        type: 'syntax'
+        type: 'ESLint-syntax'
       });
     }
 
-    // Check for undefined variables
+    // Check for var usage (no-var rule)
+    if (trimmedLine.includes('var ')) {
+      errors.push({
+        line: lineNumber,
+        message: 'استخدم let أو const بدلاً من var (ESLint: no-var)',
+        severity: 'error',
+        suggestion: 'استبدل var بـ let أو const',
+        type: 'ESLint-best-practice'
+      });
+    }
+
+    // Check for double quotes (quotes rule)
+    if (trimmedLine.includes('"') && !trimmedLine.includes("'")) {
+      errors.push({
+        line: lineNumber,
+        message: 'استخدم علامات اقتباس مفردة (ESLint: quotes)',
+        severity: 'error',
+        suggestion: "استبدل \" بـ '",
+        type: 'ESLint-style'
+      });
+    }
+
+    // Check for == instead of === (eqeqeq rule)
+    if (trimmedLine.includes('==') && !trimmedLine.includes('===') && !trimmedLine.includes('!==')) {
+      errors.push({
+        line: lineNumber,
+        message: 'استخدم === بدلاً من == (ESLint: eqeqeq)',
+        severity: 'error',
+        suggestion: 'استبدل == بـ ===',
+        type: 'ESLint-best-practice'
+      });
+    }
+
+    // Check for eval usage (no-eval rule)
+    if (trimmedLine.includes('eval(')) {
+      errors.push({
+        line: lineNumber,
+        message: 'تجنب استخدام eval() (ESLint: no-eval)',
+        severity: 'error',
+        suggestion: 'استخدم طرق أخرى آمنة بدلاً من eval',
+        type: 'ESLint-security'
+      });
+    }
+
+    // Check for console.log without parentheses
     if (trimmedLine.includes('console.log') && !trimmedLine.includes('console.log(')) {
       errors.push({
         line: lineNumber,
-        message: 'خطأ في استخدام console.log',
+        message: 'خطأ في صيغة console.log (ESLint: syntax-error)',
         severity: 'error',
         suggestion: 'استخدم console.log() مع أقواس',
-        type: 'syntax'
+        type: 'ESLint-syntax'
       });
     }
 
@@ -338,55 +430,103 @@ const validateJavaScriptCode = (code: string): CodeError[] => {
     if (openBrackets > closeBrackets && !lines.slice(index + 1).some(l => l.includes('}'))) {
       errors.push({
         line: lineNumber,
-        message: 'قوس معقوف مفتوح غير مغلق',
+        message: 'قوس معقوف مفتوح غير مغلق (ESLint: syntax-error)',
         severity: 'error',
         suggestion: 'أضف } لإغلاق القوس',
-        type: 'syntax'
+        type: 'ESLint-syntax'
       });
     }
 
     if (openParens > closeParens) {
       errors.push({
         line: lineNumber,
-        message: 'قوس عادي مفتوح غير مغلق',
+        message: 'قوس عادي مفتوح غير مغلق (ESLint: syntax-error)',
         severity: 'error',
         suggestion: 'أضف ) لإغلاق القوس',
-        type: 'syntax'
+        type: 'ESLint-syntax'
       });
     }
 
-    // Check for common mistakes
+    // Check for unused variables pattern
+    if (trimmedLine.includes('let ') || trimmedLine.includes('const ')) {
+      const varMatch = trimmedLine.match(/(let|const)\s+(\w+)/);
+      if (varMatch) {
+        const varName = varMatch[2];
+        const restOfCode = lines.slice(index + 1).join('\n');
+        if (!restOfCode.includes(varName) && !code.substring(0, lines.slice(0, index).join('\n').length).includes(varName)) {
+          errors.push({
+            line: lineNumber,
+            message: `متغير غير مستخدم: ${varName} (ESLint: no-unused-vars)`,
+            severity: 'warning',
+            suggestion: 'احذف المتغير أو استخدمه في الكود',
+            type: 'ESLint-warning'
+          });
+        }
+      }
+    }
+
+    // Check for function without parentheses
     if (trimmedLine.includes('function') && !trimmedLine.includes('()') && !trimmedLine.includes('(')) {
       errors.push({
         line: lineNumber,
-        message: 'دالة بدون أقواس',
-        severity: 'warning',
+        message: 'دالة بدون أقواس (ESLint: syntax-error)',
+        severity: 'error',
         suggestion: 'أضف () بعد اسم الدالة',
-        type: 'best-practice'
+        type: 'ESLint-syntax'
       });
     }
 
-    // Check for reserved words misuse
-    if (trimmedLine.includes('class') || trimmedLine.includes('interface')) {
+    // Check for trailing spaces (no-trailing-spaces rule)
+    if (line !== line.trimEnd()) {
       errors.push({
         line: lineNumber,
-        message: 'استخدام كلمة محجوزة متقدمة',
+        message: 'مسافات زائدة في نهاية السطر (ESLint: no-trailing-spaces)',
         severity: 'warning',
-        suggestion: 'تأكد من الاستخدام الصحيح للكلمة المحجوزة',
-        type: 'advanced'
+        suggestion: 'احذف المسافات الزائدة من نهاية السطر',
+        type: 'ESLint-style'
+      });
+    }
+
+    // Check for indentation (basic check)
+    if (trimmedLine && line.startsWith(' ') && line.match(/^ +/)?.[0].length % 2 !== 0) {
+      errors.push({
+        line: lineNumber,
+        message: 'مشكلة في المحاذاة - استخدم مسافتين (ESLint: indent)',
+        severity: 'warning',
+        suggestion: 'استخدم مسافتين للمحاذاة',
+        type: 'ESLint-style'
       });
     }
 
     // Check for potential runtime errors
-    if (trimmedLine.includes('.length') && !trimmedLine.includes('if')) {
+    if (trimmedLine.includes('.length') && !trimmedLine.includes('if') && !trimmedLine.includes('&&')) {
       errors.push({
         line: lineNumber,
-        message: 'تحقق من وجود المصفوفة قبل استخدام .length',
+        message: 'تحقق من وجود المصفوفة قبل استخدام .length (ESLint: best-practice)',
         severity: 'warning',
-        suggestion: 'استخدم if للتحقق من وجود المصفوفة أولاً',
-        type: 'runtime'
+        suggestion: 'استخدم if أو && للتحقق من وجود المصفوفة أولاً',
+        type: 'ESLint-runtime'
       });
     }
+
+    // Check for undefined variables (basic check)
+    const words = trimmedLine.match(/\b[a-zA-Z_$][a-zA-Z0-9_$]*\b/g) || [];
+    const jsKeywords = ['var', 'let', 'const', 'function', 'if', 'else', 'for', 'while', 'do', 'break', 'continue', 'return', 'try', 'catch', 'finally', 'throw', 'switch', 'case', 'default', 'true', 'false', 'null', 'undefined', 'console', 'alert', 'document', 'window'];
+    
+    words.forEach(word => {
+      if (!jsKeywords.includes(word) && !code.includes(`let ${word}`) && !code.includes(`const ${word}`) && !code.includes(`var ${word}`) && !code.includes(`function ${word}`)) {
+        // Only flag if it's not a property access or method call
+        if (!trimmedLine.includes(`.${word}`) && !trimmedLine.includes(`${word}(`)) {
+          errors.push({
+            line: lineNumber,
+            message: `متغير غير معرف: ${word} (ESLint: no-undef)`,
+            severity: 'error',
+            suggestion: `تأكد من تعريف المتغير ${word} قبل استخدامه`,
+            type: 'ESLint-error'
+          });
+        }
+      }
+    });
   });
 
   return errors;
