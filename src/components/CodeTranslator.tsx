@@ -6,7 +6,7 @@ import LineNumberedTextarea from './LineNumberedTextarea';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Code, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { jsKeywordsDatabase } from '@/data/translationDatabase';
+import { jsKeywordsDatabase, variableTranslations } from '@/data/translationDatabase';
 import { smartTranslate } from '@/services/translationService';
 import JSZip from 'jszip';
 
@@ -74,13 +74,37 @@ const getStringRanges = (line: string) => {
   return ranges;
 };
 
-// Use the imported JavaScript keywords database
+// Enhanced translation dictionaries
 const jsKeywords = Object.fromEntries(
   Object.entries(jsKeywordsDatabase).map(([arabic, english]) => [
     normalizeArabic(arabic),
     english
   ])
 );
+
+const variableKeywords = Object.fromEntries(
+  Object.entries(variableTranslations).map(([arabic, english]) => [
+    normalizeArabic(arabic),
+    english
+  ])
+);
+
+// Combined translation function with priority for variables
+const getTranslation = (word: string): string | null => {
+  const normalized = normalizeArabic(word);
+  
+  // Check variable translations first (higher priority)
+  if (variableKeywords[normalized]) {
+    return variableKeywords[normalized];
+  }
+  
+  // Then check JS keywords
+  if (jsKeywords[normalized]) {
+    return jsKeywords[normalized];
+  }
+  
+  return null;
+};
 const validateAndTranslate = async (code: string) => {
   const lines = code.split('\n');
   const newErrors: TranslationError[] = [];
@@ -104,35 +128,43 @@ const validateAndTranslate = async (code: string) => {
       for (const word of arabicWords) {
         const cleanWord = word.trim();
         const normalized = normalizeArabic(cleanWord);
-        let replacement = jsKeywords[normalized];
+        let replacement = getTranslation(cleanWord);
 
         if (replacement) {
-          // استخدام قاعدة البيانات المحلية للكلمات المحجوزة
+          // استخدام قاعدة البيانات المحلية المحسنة
           const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
           const re = new RegExp(safeWord, 'g');
           result = result.replace(re, replacement);
         } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-          // تجاهل الكلمات العامة
-          if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
-            // استخدام خدمة الترجمة المفتوحة المصدر للكلمات غير المحجوزة
+          // تجاهل الكلمات العامة والحروف
+          const commonWords = ['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل','مع','بدون','عند','لدى','حول','ضد','نحو','بين','أمام','خلف','فوق','تحت','يمين','يسار'];
+          if (!commonWords.includes(normalized)) {
+            // تحسين الترجمة باستخدام سياق أfضل
             try {
-              const translationResult = await smartTranslate(cleanWord);
+              const translationResult = await smartTranslate(cleanWord, true);
               if (translationResult.success && translationResult.translatedText !== cleanWord) {
-                replacement = translationResult.translatedText.toLowerCase().replace(/\s+/g, '_');
+                replacement = translationResult.translatedText;
+                
                 const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                 const re = new RegExp(safeWord, 'g');
                 result = result.replace(re, replacement);
               } else {
+                // استخدام اسم متغير عام مع رقم تسلسلي
+                replacement = `arabicVar${Math.random().toString(36).substr(2, 5)}`;
+                const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const re = new RegExp(safeWord, 'g');
+                result = result.replace(re, replacement);
+                
                 newErrors.push({
                   line: index + 1,
-                  message: `كلمة غير معروفة: ${cleanWord} - ${translationResult.error || 'لم تترجم'}`,
+                  message: `ترجمة تلقائية للكلمة: ${cleanWord} → ${replacement}`,
                   word: cleanWord
                 });
               }
             } catch (error) {
               newErrors.push({
                 line: index + 1,
-                message: `كلمة غير معروفة: ${cleanWord}`,
+                message: `كلمة تحتاج ترجمة: ${cleanWord}`,
                 word: cleanWord
               });
             }
@@ -644,13 +676,14 @@ const handleDownloadZip = async () => {
                     arabicWords.forEach((word) => {
                       const cleanWord = word.trim();
                       const normalized = normalizeArabic(cleanWord);
-                      const replacement = jsKeywords[normalized];
+                      const replacement = getTranslation(cleanWord);
 
                       if (!replacement && cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
-                        if (!['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل'].includes(normalized)) {
+                        const commonWords = ['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل','مع','بدون','عند','لدى','حول','ضد','نحو','بين','أمام','خلف','فوق','تحت','يمين','يسار'];
+                        if (!commonWords.includes(normalized)) {
                           newErrors.push({
                             line: index + 1,
-                            message: `كلمة تحتاج ترجمة: ${cleanWord}`,
+                            message: `كلمة تحتاج ترجمة محسنة: ${cleanWord}`,
                             word: cleanWord
                           });
                         }

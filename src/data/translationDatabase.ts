@@ -1,4 +1,135 @@
 // قاعدة بيانات الكلمات المحجوزة في JavaScript
+// Enhanced translation database for better accuracy
+export const variableTranslations: Record<string, string> = {
+  // Numbers and counters
+  'الرقم': 'number',
+  'الرقم_الأول': 'firstNumber',
+  'الرقم_الثاني': 'secondNumber',
+  'الرقم_الثالث': 'thirdNumber',
+  'رقم': 'num',
+  'رقم1': 'num1',
+  'رقم2': 'num2',
+  'رقم3': 'num3',
+  'العداد': 'counter',
+  'المؤشر': 'index',
+  'الفهرس': 'index',
+  'الحد_الأقصى': 'maxValue',
+  'الحد_الأدنى': 'minValue',
+  'المجموع': 'sum',
+  'الناتج': 'result',
+  'النتيجة': 'result',
+  'المحصلة': 'total',
+  
+  // Text and strings
+  'النص': 'text',
+  'الكلمة': 'word',
+  'الجملة': 'sentence',
+  'الرسالة': 'message',
+  'العنوان': 'title',
+  'الاسم': 'name',
+  'اسم_المستخدم': 'username',
+  'كلمة_المرور': 'password',
+  'البريد_الإلكتروني': 'email',
+  'الهاتف': 'phone',
+  'العمر': 'age',
+  'التاريخ': 'date',
+  
+  // Arrays and lists
+  'المصفوفة': 'array',
+  'القائمة': 'list',
+  'العناصر': 'items',
+  'البيانات': 'data',
+  'المعلومات': 'info',
+  'السجلات': 'records',
+  'الأرقام': 'numbers',
+  'الأسماء': 'names',
+  
+  // Boolean values
+  'صحيح': 'true',
+  'خطأ': 'false',
+  'فارغ': 'null',
+  'غير_محدد': 'undefined',
+  'موجود': 'exists',
+  'متاح': 'available',
+  'نشط': 'active',
+  'مفعل': 'enabled',
+  'معطل': 'disabled',
+  
+  // Functions and operations
+  'العملية': 'operation',
+  'الوظيفة': 'function',
+  'الطريقة': 'method',
+  'الحدث': 'event',
+  'الاستدعاء': 'callback',
+  'المعالجة': 'handler',
+  'التحقق': 'validation',
+  'التصفية': 'filter',
+  'البحث': 'search',
+  'الترتيب': 'sort',
+  
+  // Objects and properties
+  'الكائن': 'object',
+  'الخاصية': 'property',
+  'القيمة': 'value',
+  'المفتاح': 'key',
+  'الحقل': 'field',
+  'الصفة': 'attribute',
+  'الإعداد': 'setting',
+  'التكوين': 'config',
+  'الخيار': 'option',
+  
+  // UI elements
+  'الزر': 'button',
+  'الحقل_النصي': 'textField',
+  'القائمة_المنسدلة': 'dropdown',
+  'خانة_الاختيار': 'checkbox',
+  'الرابط': 'link',
+  'الصورة': 'image',
+  'الجدول': 'table',
+  'الصف': 'row',
+  'العمود': 'column',
+  'النموذج': 'form',
+  
+  // Time and dates
+  'الوقت': 'time',
+  'الساعة': 'hour',
+  'الدقيقة': 'minute',
+  'الثانية': 'second',
+  'اليوم': 'day',
+  'الشهر': 'month',
+  'السنة': 'year',
+  'التوقيت': 'timestamp',
+  
+  // Colors
+  'الأحمر': 'red',
+  'الأزرق': 'blue',
+  'الأخضر': 'green',
+  'الأصفر': 'yellow',
+  'الأبيض': 'white',
+  'الأسود': 'black',
+  'اللون': 'color',
+  
+  // States and statuses
+  'الحالة': 'state',
+  'الوضع': 'status',
+  'الطور': 'phase',
+  'المرحلة': 'stage',
+  'المستوى': 'level',
+  'الدرجة': 'grade',
+  'النسبة': 'percentage',
+  'المعدل': 'rate',
+  
+  // Math operations
+  'الجمع': 'addition',
+  'الطرح': 'subtraction',
+  'الضرب': 'multiplication',
+  'القسمة': 'division',
+  'الجذر': 'root',
+  'القوة': 'power',
+  'المتوسط': 'average',
+  'الوسيط': 'median'
+};
+
 export const jsKeywordsDatabase: Record<string, string> = {
   // Reserved Keywords في JavaScript
   'متغير': 'let',
