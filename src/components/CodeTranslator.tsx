@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import LineNumberedTextarea from './LineNumberedTextarea';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Code, AlertCircle, CheckCircle, Download } from 'lucide-react';
+import { ArrowRight, Code, AlertCircle, CheckCircle, Download, Wand2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { jsKeywordsDatabase, variableTranslations } from '@/data/translationDatabase';
 import { smartTranslate } from '@/services/translationService';
@@ -359,6 +359,143 @@ const eslintConfig = {
   }
 };
 
+// Prettier configuration for code formatting
+const prettierConfig = {
+  semi: true,
+  singleQuote: true,
+  tabWidth: 2,
+  useTabs: false,
+  trailingComma: 'none',
+  bracketSpacing: true,
+  arrowParens: 'always',
+  endOfLine: 'lf',
+  printWidth: 80
+};
+
+// Prettier-like code formatter
+const formatJavaScriptCode = (code: string): string => {
+  if (!code.trim()) return code;
+
+  const lines = code.split('\n');
+  const formattedLines: string[] = [];
+  let indentLevel = 0;
+  let inMultilineComment = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    
+    // Handle empty lines
+    if (!line) {
+      formattedLines.push('');
+      continue;
+    }
+
+    // Handle multiline comments
+    if (line.includes('/*') && !line.includes('*/')) {
+      inMultilineComment = true;
+    }
+    if (inMultilineComment) {
+      formattedLines.push('  '.repeat(indentLevel) + line);
+      if (line.includes('*/')) {
+        inMultilineComment = false;
+      }
+      continue;
+    }
+
+    // Skip single line comments formatting
+    if (line.startsWith('//')) {
+      formattedLines.push('  '.repeat(indentLevel) + line);
+      continue;
+    }
+
+    // Decrease indent for closing brackets
+    if (line.startsWith('}') || line.startsWith(']') || line.startsWith(')')||
+        line === 'else' || line.startsWith('} else') || line.startsWith('} catch') || 
+        line.startsWith('} finally')) {
+      indentLevel = Math.max(0, indentLevel - 1);
+    }
+
+    // Format the line with proper spacing
+    let formattedLine = line;
+
+    // Add spaces around operators (Prettier style)
+    formattedLine = formattedLine
+      .replace(/([^=!<>])=([^=])/g, '$1 = $2')        // assignment operators
+      .replace(/([^=!<>])==([^=])/g, '$1 == $2')      // comparison operators
+      .replace(/([^=])===([^=])/g, '$1 === $2')       // strict equality
+      .replace(/([^!])!=([^=])/g, '$1 != $2')         // not equal
+      .replace(/([^!])!==([^=])/g, '$1 !== $2')       // strict not equal
+      .replace(/([^<>])<=([^=])/g, '$1 <= $2')        // less than or equal
+      .replace(/([^<>])>=([^=])/g, '$1 >= $2')        // greater than or equal
+      .replace(/([^+])\+([^+=])/g, '$1 + $2')         // addition
+      .replace(/([^-])-([^-=])/g, '$1 - $2')          // subtraction
+      .replace(/([^*])\*([^*=])/g, '$1 * $2')         // multiplication
+      .replace(/([^\/])\/([^\/=])/g, '$1 / $2')       // division
+      .replace(/([^%])%([^=])/g, '$1 % $2')           // modulo
+      .replace(/&&/g, ' && ')                          // logical AND
+      .replace(/\|\|/g, ' || ')                        // logical OR
+      .replace(/([^!])!([^=])/g, '$1! $2');           // logical NOT
+
+    // Fix double spaces
+    formattedLine = formattedLine.replace(/\s+/g, ' ');
+
+    // Add spaces after commas (Prettier style)
+    formattedLine = formattedLine.replace(/,(?!\s)/g, ', ');
+
+    // Add spaces after semicolons in for loops
+    formattedLine = formattedLine.replace(/;(?!\s|$)/g, '; ');
+
+    // Format function declarations and calls
+    formattedLine = formattedLine
+      .replace(/function\s*\(/g, 'function (')
+      .replace(/\)\s*{/g, ') {')
+      .replace(/}\s*else\s*{/g, '} else {')
+      .replace(/}\s*catch\s*\(/g, '} catch (')
+      .replace(/}\s*finally\s*{/g, '} finally {');
+
+    // Format if, for, while statements
+    formattedLine = formattedLine
+      .replace(/if\s*\(/g, 'if (')
+      .replace(/for\s*\(/g, 'for (')
+      .replace(/while\s*\(/g, 'while (')
+      .replace(/switch\s*\(/g, 'switch (');
+
+    // Format object literals
+    formattedLine = formattedLine
+      .replace(/{(?!\s)/g, '{ ')
+      .replace(/(?<!\s)}/g, ' }')
+      .replace(/\[(?!\s)/g, '[ ')
+      .replace(/(?<!\s)\]/g, ' ]');
+
+    // Add proper indentation
+    const indent = '  '.repeat(indentLevel);
+    formattedLine = indent + formattedLine;
+
+    // Increase indent for opening brackets
+    if (line.includes('{') && !line.includes('}')) {
+      indentLevel++;
+    }
+    if ((line.includes('[') && !line.includes(']')) ||
+        line.startsWith('if') || line.startsWith('for') || line.startsWith('while') ||
+        line.startsWith('function') || line.includes('else if')) {
+      // Only increase indent if there's no opening brace on the same line
+      if (!line.includes('{')) {
+        indentLevel++;
+      }
+    }
+
+    formattedLines.push(formattedLine);
+  }
+
+  // Add final newline (Prettier style)
+  let result = formattedLines.join('\n');
+  if (result && !result.endsWith('\n')) {
+    result += '\n';
+  }
+
+  return result;
+};
+
 const validateJavaScriptCode = (code: string): CodeError[] => {
   const errors: CodeError[] = [];
   const lines = code.split('\n');
@@ -585,6 +722,37 @@ const handleCodeValidation = () => {
     toast({
       title: `⚠️ تم العثور على ${detectedErrors.length} خطأ`,
       description: 'يرجى مراجعة الأخطاء أدناه',
+    });
+  }
+};
+
+const handleCodeFormatting = () => {
+  if (!translatedCode.trim()) {
+    toast({
+      title: 'لا يوجد كود للتنسيق',
+      description: 'يرجى ترجمة الكود أولاً',
+    });
+    return;
+  }
+
+  try {
+    const formattedCode = formatJavaScriptCode(translatedCode);
+    setTranslatedCode(formattedCode);
+    
+    // Re-validate after formatting to ensure no conflicts
+    setTimeout(() => {
+      const detectedErrors = validateJavaScriptCode(formattedCode);
+      setCodeErrors(detectedErrors);
+    }, 100);
+
+    toast({
+      title: '✅ تم تنسيق الكود',
+      description: 'تم تنسيق الكود وفقاً لمعايير Prettier',
+    });
+  } catch (error) {
+    toast({
+      title: '❌ خطأ في التنسيق',
+      description: 'حدث خطأ أثناء تنسيق الكود',
     });
   }
 };
@@ -826,24 +994,32 @@ const handleDownloadZip = async () => {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button 
                       onClick={() => {
                         navigator.clipboard.writeText(translatedCode);
                         toast({ title: 'تم النسخ', description: 'تم نسخ الناتج النهائي (JavaScript).' });
                       }}
                       variant="outline"
-                      className="w-full"
+                      className="w-full text-xs"
                     >
-                      نسخ الناتج النهائي
+                      نسخ الكود
                     </Button>
                     <Button 
                       onClick={handleCodeValidation}
                       variant="outline"
-                      className="w-full gap-2"
+                      className="w-full gap-1 text-xs"
                     >
-                      <AlertCircle className="h-4 w-4" />
-                      فحص الأخطاء
+                      <AlertCircle className="h-3 w-3" />
+                      فحص ESLint
+                    </Button>
+                    <Button 
+                      onClick={handleCodeFormatting}
+                      variant="outline"
+                      className="w-full gap-1 text-xs"
+                    >
+                      <Wand2 className="h-3 w-3" />
+                      تنسيق Prettier
                     </Button>
                   </div>
                 </div>
