@@ -870,12 +870,14 @@ const handleDownloadZip = async () => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-              className="min-h-[400px] overflow-x-auto resize-none"
+              className="min-h-[400px] resize-none"
               style={{ 
-                wordBreak: 'keep-all', 
-                whiteSpace: 'nowrap', 
+                overflow: 'auto',
+                whiteSpace: 'nowrap',
+                wordWrap: 'normal',
                 overflowWrap: 'normal',
-                textWrap: 'nowrap'
+                textWrap: 'nowrap',
+                wordBreak: 'keep-all'
               }}
               dir="rtl"
               overlayContent={highlightErrors(arabicCode)}
