@@ -870,8 +870,13 @@ const handleDownloadZip = async () => {
   طباعة('مرحبا ' + اسم)
 }
 تحية()"
-              className="min-h-[400px] overflow-x-auto whitespace-nowrap"
-              style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
+              className="min-h-[400px] overflow-x-auto resize-none"
+              style={{ 
+                wordBreak: 'keep-all', 
+                whiteSpace: 'nowrap', 
+                overflowWrap: 'normal',
+                textWrap: 'nowrap'
+              }}
               dir="rtl"
               overlayContent={highlightErrors(arabicCode)}
               onOverlayClick={handleHighlighterClick}
@@ -949,8 +954,13 @@ const handleDownloadZip = async () => {
                     <LineNumberedTextarea
                       value={translatedCode}
                       readOnly
-                      className="min-h-[400px] overflow-x-auto whitespace-nowrap"
-                      style={{ wordBreak: 'keep-all', whiteSpace: 'pre' }}
+                      className="min-h-[400px] overflow-x-auto resize-none"
+                      style={{ 
+                        wordBreak: 'keep-all', 
+                        whiteSpace: 'nowrap', 
+                        overflowWrap: 'normal',
+                        textWrap: 'nowrap'
+                      }}
                     />
                     {errors.length === 0 && codeErrors.length === 0 && (
                       <Badge className="absolute top-2 right-2 bg-js-green text-white">
