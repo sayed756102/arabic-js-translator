@@ -37,8 +37,26 @@ const CodeTranslator = () => {
   useEffect(() => {
     const el = arabicTextareaRef.current;
     if (!el) return;
+    
+    // Auto-resize height based on content
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
+    
+    // Auto-scroll horizontally to follow cursor position
+    const cursorPosition = el.selectionStart;
+    const textBeforeCursor = el.value.substring(0, cursorPosition);
+    const lines = textBeforeCursor.split('\n');
+    const currentLine = lines[lines.length - 1];
+    
+    // Calculate approximate character position
+    const charWidth = 8; // Approximate character width
+    const scrollPosition = Math.max(0, (currentLine.length * charWidth) - (el.clientWidth * 0.7));
+    
+    // Smooth scroll to follow typing
+    el.scrollTo({
+      left: scrollPosition,
+      behavior: 'smooth'
+    });
   }, [arabicCode]);
 
 // Arabic to English JavaScript keywords mapping (expanded + normalization)
