@@ -1,14 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import LineNumberedTextarea from './LineNumberedTextarea';
-import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Code, AlertCircle, CheckCircle, Download, Wand2 } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
-import { jsKeywordsDatabase, variableTranslations } from '@/data/translationDatabase';
-import { smartTranslate } from '@/services/translationService';
-import JSZip from 'jszip';
+import React, { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import LineNumberedTextarea from "./LineNumberedTextarea";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowRight,
+  Code,
+  AlertCircle,
+  CheckCircle,
+  Download,
+  Wand2,
+} from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import {
+  jsKeywordsDatabase,
+  variableTranslations,
+} from "@/data/translationDatabase";
+import { smartTranslate } from "@/services/translationService";
+import JSZip from "jszip";
 
 interface TranslationError {
   line: number;
@@ -19,14 +29,14 @@ interface TranslationError {
 interface CodeError {
   line: number;
   message: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
   suggestion: string;
   type: string;
 }
 
 const CodeTranslator = () => {
-  const [arabicCode, setArabicCode] = useState('');
-  const [translatedCode, setTranslatedCode] = useState('');
+  const [arabicCode, setArabicCode] = useState("");
+  const [translatedCode, setTranslatedCode] = useState("");
   const [errors, setErrors] = useState<TranslationError[]>([]);
   const [codeErrors, setCodeErrors] = useState<CodeError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -37,10 +47,10 @@ const CodeTranslator = () => {
   useEffect(() => {
     const el = arabicTextareaRef.current;
     if (!el) return;
-    
+
     // Auto-resize height based on content
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
     
     // Auto-scroll horizontally to follow cursor position
     const cursorPosition = el.selectionStart;
