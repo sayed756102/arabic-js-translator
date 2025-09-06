@@ -143,52 +143,71 @@ const validateAndTranslate = async (code: string) => {
       let result = seg;
       const arabicWords = seg.match(/[\u0600-\u06FF_]+/g) || [];
       
+      // مرحلة 1: ترجمة الكلمات المحجوزة من القاعدة المحلية أولاً
+      const localTranslations = new Map<string, string>();
+      const remainingWords: string[] = [];
+      
       for (const word of arabicWords) {
         const cleanWord = word.trim();
-        const normalized = normalizeArabic(cleanWord);
-        let replacement = getTranslation(cleanWord);
-
-        if (replacement) {
-          // استخدام قاعدة البيانات المحلية المحسنة
-          const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const re = new RegExp(safeWord, 'g');
-          result = result.replace(re, replacement);
+        const localTranslation = getTranslation(cleanWord);
+        
+        if (localTranslation) {
+          localTranslations.set(cleanWord, localTranslation);
         } else if (cleanWord && /[\u0600-\u06FF]/.test(cleanWord)) {
           // تجاهل الكلمات العامة والحروف
+          const normalized = normalizeArabic(cleanWord);
           const commonWords = ['في','ال','الى','من','ان','هو','هي','و','ثم','على','كل','كله','الكل','مع','بدون','عند','لدى','حول','ضد','نحو','بين','أمام','خلف','فوق','تحت','يمين','يسار'];
+          
           if (!commonWords.includes(normalized)) {
-            // تحسين الترجمة باستخدام سياق أfضل
-            try {
-              const translationResult = await smartTranslate(cleanWord, true);
-              if (translationResult.success && translationResult.translatedText !== cleanWord) {
-                replacement = translationResult.translatedText;
-                
-                const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const re = new RegExp(safeWord, 'g');
-                result = result.replace(re, replacement);
-              } else {
-                // استخدام اسم متغير عام مع رقم تسلسلي
-                replacement = `arabicVar${Math.random().toString(36).substr(2, 5)}`;
-                const safeWord = cleanWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const re = new RegExp(safeWord, 'g');
-                result = result.replace(re, replacement);
-                
-                newErrors.push({
-                  line: index + 1,
-                  message: `ترجمة تلقائية للكلمة: ${cleanWord} → ${replacement}`,
-                  word: cleanWord
-                });
-              }
-            } catch (error) {
-              newErrors.push({
-                line: index + 1,
-                message: `كلمة تحتاج ترجمة: ${cleanWord}`,
-                word: cleanWord
-              });
-            }
+            remainingWords.push(cleanWord);
           }
         }
       }
+      
+      // تطبيق الترجمات المحلية أولاً
+      for (const [original, translation] of localTranslations) {
+        const safeWord = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const re = new RegExp(safeWord, 'g');
+        result = result.replace(re, translation);
+      }
+      
+      // مرحلة 2: ترجمة الكلمات المتبقية باستخدام الترجمة الخارجية
+      for (const word of remainingWords) {
+        try {
+          const translationResult = await smartTranslate(word, true);
+          if (translationResult.success && translationResult.translatedText !== word) {
+            const replacement = translationResult.translatedText;
+            const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(safeWord, 'g');
+            result = result.replace(re, replacement);
+          } else {
+            // استخدام اسم متغير عام مع رقم تسلسلي
+            const replacement = `arabicVar${Math.random().toString(36).substr(2, 5)}`;
+            const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(safeWord, 'g');
+            result = result.replace(re, replacement);
+            
+            newErrors.push({
+              line: index + 1,
+              message: `ترجمة تلقائية للكلمة: ${word} → ${replacement}`,
+              word: word
+            });
+          }
+        } catch (error) {
+          // في حالة فشل الترجمة الخارجية، استخدام اسم عام
+          const replacement = `arabicVar${Math.random().toString(36).substr(2, 5)}`;
+          const safeWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const re = new RegExp(safeWord, 'g');
+          result = result.replace(re, replacement);
+          
+          newErrors.push({
+            line: index + 1,
+            message: `فشل في ترجمة: ${word} → ${replacement}`,
+            word: word
+          });
+        }
+      }
+      
       return result;
     };
 
