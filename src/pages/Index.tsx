@@ -1,44 +1,60 @@
-import React, { useState } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Code, BookOpen, Facebook, Users, Send, MessageCircle, Globe } from 'lucide-react';
-import CodeTranslator from '@/components/CodeTranslator';
-import JavaScriptBasics from '@/components/JavaScriptBasics';
-import Header from '@/components/Header';
+import React, { useState } from "react";
+import { Helmet } from "react-helmet-async";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import {
+  Code,
+  BookOpen,
+  Facebook,
+  Users,
+  Send,
+  MessageCircle,
+  Globe,
+} from "lucide-react";
+import CodeTranslator from "@/components/CodeTranslator";
+import JavaScriptBasics from "@/components/JavaScriptBasics";
+import Header from "@/components/Header";
  
 const Index = () => {
-  const [activeTab, setActiveTab] = useState('translator');
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://example.com';
+  const [activeTab, setActiveTab] = useState("translator");
+  const siteUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://example.com";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/95">
       <Helmet>
-        <script type="application/ld+json">{JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "ZAS-برمجه",
-          url: `${siteUrl}/`,
-          description: "ZAS-برمجه: أداة لترجمة أكواد JavaScript من العربية إلى الإنجليزية مع كشف الأخطاء والتصحيح التلقائي",
-          inLanguage: "ar",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: `${siteUrl}/?q={search_term_string}`,
-            "query-input": "required name=search_term_string"
-          }
-        })}</script>
-        <script type="application/ld+json">{JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          name: "ZAS-برمجه",
-          url: `${siteUrl}/`,
-          logo: `${siteUrl}/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png`
-        })}</script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "ZAS-برمجه",
+            url: `${siteUrl}/`,
+            description:
+              "ZAS-برمجه: أداة لترجمة أكواد JavaScript من العربية إلى الإنجليزية مع كشف الأخطاء والتصحيح التلقائي",
+            inLanguage: "ar",
+            potentialAction: {
+              "@type": "SearchAction",
+              target: `${siteUrl}/?q={search_term_string}`,
+              "query-input": "required name=search_term_string",
+            },
+          })}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: "ZAS-برمجه",
+            url: `${siteUrl}/`,
+            logo: `${siteUrl}/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png`,
+          })}
+        </script>
       </Helmet>
       <Header />
       <main role="main">
-      {/* Hero Section */}
-      <div id="purpose" className="relative">
+        {/* Hero Section */}
+        <div id="purpose" className="relative">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-r from-js-yellow/10 via-js-green/10 to-arabic-blue/10 blur-3xl" />
         <div className="absolute top-20 left-1/4 w-32 h-32 bg-js-yellow/20 rounded-full blur-2xl animate-pulse" />
@@ -47,7 +63,12 @@ const Index = () => {
         <div className="relative container mx-auto px-4 py-12">
           <div className="text-center space-y-6 mb-12">
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full border border-primary/20">
-              <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-5 w-5 rounded-sm" loading="lazy" />
+              <img
+                src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png"
+                alt="شعار ZAS-برمجه"
+                className="h-5 w-5 rounded-sm"
+                loading="lazy"
+              />
               <span className="text-sm font-medium">ZAS-برمجه</span>
             </div>
             
@@ -105,7 +126,12 @@ const Index = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-6">
             <div className="flex justify-center items-center gap-2">
-              <img src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png" alt="شعار ZAS-برمجه" className="h-6 w-6 rounded-sm" loading="lazy" />
+              <img
+                src="/lovable-uploads/789bfc04-c3a4-4d55-b126-b12cf5a89722.png"
+                alt="شعار ZAS-برمجه"
+                className="h-6 w-6 rounded-sm"
+                loading="lazy"
+              />
               <span className="font-semibold">ZAS-برمجه</span>
             </div>
             <p className="text-sm text-muted-foreground">

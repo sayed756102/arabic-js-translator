@@ -1,13 +1,13 @@
-import React, { forwardRef, useCallback, useMemo } from 'react';
-import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
+import React, { forwardRef, useCallback, useMemo } from "react";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 interface LineNumberedTextareaProps {
   value: string;
   onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   placeholder?: string;
   className?: string;
-  dir?: 'rtl' | 'ltr';
+  dir?: "rtl" | "ltr";
   readOnly?: boolean;
   style?: React.CSSProperties;
   overlayContent?: string;
@@ -15,20 +15,26 @@ interface LineNumberedTextareaProps {
   overlayRef?: React.RefObject<HTMLDivElement>;
 }
 
-const LineNumberedTextarea = forwardRef<HTMLTextAreaElement, LineNumberedTextareaProps>(
-  ({ 
-    value, 
-    onChange, 
-    placeholder, 
-    className, 
-    dir = 'ltr', 
-    readOnly = false,
-    style,
-    overlayContent,
-    onOverlayClick,
-    overlayRef,
-    ...props 
-  }, ref) => {
+const LineNumberedTextarea = forwardRef<
+  HTMLTextAreaElement,
+  LineNumberedTextareaProps
+>(
+  (
+    {
+      value,
+      onChange,
+      placeholder,
+      className,
+      dir = "ltr",
+      readOnly = false,
+      style,
+      overlayContent,
+      onOverlayClick,
+      overlayRef,
+      ...props
+    },
+    ref,
+  ) => {
     
     const lineCount = useMemo(() => {
       return Math.max(1, value.split('\n').length);
@@ -38,20 +44,22 @@ const LineNumberedTextarea = forwardRef<HTMLTextAreaElement, LineNumberedTextare
       return Array.from({ length: lineCount }, (_, i) => i + 1);
     }, [lineCount]);
 
-    const isRtl = dir === 'rtl';
+    const isRtl = dir === "rtl";
 
     return (
       <div className="relative flex border rounded-md overflow-hidden bg-background">
         {/* Line numbers */}
-        <div className={cn(
-          "flex flex-col bg-muted/30 border-r text-xs text-muted-foreground font-mono select-none",
-          isRtl && "border-l border-r-0 order-2"
-        )}>
+        <div
+          className={cn(
+            "flex flex-col bg-muted/30 border-r text-xs text-muted-foreground font-mono select-none",
+            isRtl && "border-l border-r-0 order-2",
+          )}
+        >
           {lineNumbers.map((num) => (
             <div
               key={num}
               className="h-6 flex items-center justify-center px-2 min-w-[3rem]"
-              style={{ lineHeight: '1.5rem' }}
+              style={{ lineHeight: "1.5rem" }}
             >
               {num}
             </div>
@@ -78,12 +86,17 @@ const LineNumberedTextarea = forwardRef<HTMLTextAreaElement, LineNumberedTextare
             placeholder={placeholder}
             className={cn(
               "min-h-[500px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0",
-              overlayContent && "text-transparent caret-transparent bg-transparent",
-              className
+              overlayContent &&
+                "text-transparent caret-transparent bg-transparent",
+              className,
             )}
             dir={dir}
             readOnly={readOnly}
-            style={overlayContent ? { ...style, caretColor: 'hsl(var(--foreground))' } : style}
+            style={
+              overlayContent
+                ? { ...style, caretColor: "hsl(var(--foreground))" }
+                : style
+            }
             {...props}
           />
         </div>
@@ -92,6 +105,6 @@ const LineNumberedTextarea = forwardRef<HTMLTextAreaElement, LineNumberedTextare
   }
 );
 
-LineNumberedTextarea.displayName = 'LineNumberedTextarea';
+LineNumberedTextarea.displayName = "LineNumberedTextarea";
 
 export default LineNumberedTextarea;
