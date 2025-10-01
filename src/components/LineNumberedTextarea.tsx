@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useMemo } from "react";
+import React, { forwardRef, useCallback, useMemo, useEffect } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +39,42 @@ const LineNumberedTextarea = forwardRef<
     const lineCount = useMemo(() => {
       return Math.max(1, value.split('\n').length);
     }, [value]);
+
+    // Auto-scroll to cursor position when typing
+    useEffect(() => {
+      if (!ref || typeof ref === 'function') return;
+      
+      const textarea = ref.current;
+      if (!textarea) return;
+
+      const handleScroll = () => {
+        const { selectionStart, scrollLeft, clientWidth } = textarea;
+        const text = textarea.value.substring(0, selectionStart);
+        const lastLineBreak = text.lastIndexOf('\n');
+        const currentLine = text.substring(lastLineBreak + 1);
+        
+        // Approximate cursor position (works for monospace fonts)
+        const charWidth = 8.4; // Approximate width of a character in mono font
+        const cursorPosition = currentLine.length * charWidth;
+        
+        // Scroll if cursor is near the edges
+        if (cursorPosition > scrollLeft + clientWidth - 50) {
+          textarea.scrollLeft = cursorPosition - clientWidth + 100;
+        } else if (cursorPosition < scrollLeft + 50) {
+          textarea.scrollLeft = Math.max(0, cursorPosition - 100);
+        }
+      };
+
+      textarea.addEventListener('input', handleScroll);
+      textarea.addEventListener('click', handleScroll);
+      textarea.addEventListener('keyup', handleScroll);
+
+      return () => {
+        textarea.removeEventListener('input', handleScroll);
+        textarea.removeEventListener('click', handleScroll);
+        textarea.removeEventListener('keyup', handleScroll);
+      };
+    }, [ref]);
 
     const lineNumbers = useMemo(() => {
       return Array.from({ length: lineCount }, (_, i) => i + 1);
