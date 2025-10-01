@@ -275,16 +275,35 @@ const validateAndTranslate = async (code: string) => {
     
     try {
       const translated = await validateAndTranslate(arabicCode);
-      setTranslatedCode(translated);
       
-      // Auto-validate the translated code
+      // تطبيق Prettier تلقائيًا للتنسيق
+      const formattedCode = formatJavaScriptCode(translated);
+      setTranslatedCode(formattedCode);
+      
+      // تطبيق ESLint تلقائيًا للفحص
       setTimeout(() => {
-        const detectedErrors = validateJavaScriptCode(translated);
+        const detectedErrors = validateJavaScriptCode(formattedCode);
         setCodeErrors(detectedErrors);
+        
+        if (detectedErrors.length === 0) {
+          toast({
+            title: '✅ الترجمة والتنسيق تمت بنجاح',
+            description: 'الكود جاهز للتشغيل بدون أخطاء',
+          });
+        } else {
+          toast({
+            title: `⚠️ تمت الترجمة مع ${detectedErrors.length} تحذير`,
+            description: 'راجع الأخطاء أدناه لتحسين الكود',
+          });
+        }
       }, 100);
       
     } catch (error) {
       console.error('Translation error:', error);
+      toast({
+        title: '❌ خطأ في الترجمة',
+        description: 'حدث خطأ أثناء ترجمة الكود',
+      });
     } finally {
       setIsTranslating(false);
     }
