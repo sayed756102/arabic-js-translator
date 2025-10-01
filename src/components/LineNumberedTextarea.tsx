@@ -67,12 +67,12 @@ const LineNumberedTextarea = forwardRef<
         </div>
 
         {/* Text area container */}
-        <div className={cn("flex-1 relative", isRtl && "order-1")}>
+        <div className={cn("flex-1 relative overflow-x-auto", isRtl && "order-1")}>
           {/* Overlay for highlighting errors (Arabic side only) */}
           {overlayContent && (
             <div
               ref={overlayRef}
-              className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-sm leading-6 px-3 py-2 pointer-events-none"
+              className="absolute inset-0 z-10 whitespace-pre font-mono text-sm leading-6 px-3 py-2 pointer-events-none overflow-x-auto"
               dir={dir}
               dangerouslySetInnerHTML={{ __html: overlayContent }}
               onClick={onOverlayClick}
@@ -85,7 +85,7 @@ const LineNumberedTextarea = forwardRef<
             onChange={onChange}
             placeholder={placeholder}
             className={cn(
-              "min-h-[500px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0",
+              "min-h-[500px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0 whitespace-pre overflow-x-auto",
               overlayContent &&
                 "text-transparent caret-transparent bg-transparent",
               className,
