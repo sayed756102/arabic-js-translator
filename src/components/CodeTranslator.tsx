@@ -11,7 +11,18 @@ import {
   CheckCircle,
   Download,
   Wand2,
+  FileCode,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import {
   jsKeywordsDatabase,
@@ -40,6 +51,9 @@ const CodeTranslator = () => {
   const [errors, setErrors] = useState<TranslationError[]>([]);
   const [codeErrors, setCodeErrors] = useState<CodeError[]>([]);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [downloadType, setDownloadType] = useState<'code' | 'code-with-errors'>('code');
+  const [fileName, setFileName] = useState('zas_project');
 
   const arabicTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -823,7 +837,7 @@ const handleCodeFormatting = () => {
   }
 };
 
-const handleDownloadZip = async () => {
+const openDownloadDialog = (type: 'code' | 'code-with-errors') => {
   if (!translatedCode.trim()) {
     toast({
       title: 'لا يوجد كود نهائي للتحميل',
@@ -831,7 +845,11 @@ const handleDownloadZip = async () => {
     });
     return;
   }
+  setDownloadType(type);
+  setShowDownloadDialog(true);
+};
 
+const handleDownloadZip = async () => {
   const zip = new JSZip();
   
   // Add the main JavaScript file
@@ -852,8 +870,8 @@ const handleDownloadZip = async () => {
 </html>`;
   zip.file('index.html', htmlContent);
   
-  // Add error report if there are errors
-  if (codeErrors.length > 0) {
+  // Add error report only if download type includes errors
+  if (downloadType === 'code-with-errors' && codeErrors.length > 0) {
     const errorReport = codeErrors.map(err => 
       `السطر ${err.line}: ${err.message} - ${err.suggestion}`
     ).join('\n');
@@ -865,15 +883,19 @@ const handleDownloadZip = async () => {
     const url = window.URL.createObjectURL(content);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'zas_project.zip';
+    link.download = `${fileName || 'zas_project'}.zip`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
     
+    setShowDownloadDialog(false);
+    
     toast({
       title: 'تم التحميل بنجاح',
-      description: 'تم تحميل المشروع كاملاً مع ملف HTML للتجريب',
+      description: downloadType === 'code-with-errors' 
+        ? 'تم تحميل المشروع مع تقرير الأخطاء' 
+        : 'تم تحميل الكود المترجم فقط',
     });
   } catch (error) {
     toast({
@@ -884,7 +906,64 @@ const handleDownloadZip = async () => {
 };
 
   return (
-    <div>      
+    <div>
+      {/* Download Dialog */}
+      <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+        <DialogContent className="sm:max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle className="text-right">تحميل ملف ZIP</DialogTitle>
+            <DialogDescription className="text-right">
+              اختر اسم الملف الذي تريد تحميله
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="filename" className="text-right block">
+                اسم الملف
+              </Label>
+              <Input
+                id="filename"
+                value={fileName}
+                onChange={(e) => setFileName(e.target.value)}
+                placeholder="zas_project"
+                className="text-right"
+                dir="rtl"
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                سيتم إضافة .zip تلقائياً
+              </p>
+            </div>
+            {downloadType === 'code-with-errors' && codeErrors.length > 0 && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm text-right">
+                  📋 سيتم تضمين {codeErrors.length} خطأ في ملف error_report.txt
+                </p>
+              </div>
+            )}
+            {downloadType === 'code' && (
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm text-right">
+                  ✅ سيتم تحميل الكود المترجم فقط (بدون تقرير الأخطاء)
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowDownloadDialog(false)}
+            >
+              إلغاء
+            </Button>
+            <Button type="button" onClick={handleDownloadZip}>
+              <Download className="h-4 w-4 ml-2" />
+              تحميل
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Arabic Input */}
         <Card className="bg-gradient-to-br from-arabic-blue/10 to-arabic-blue/5 border-arabic-blue/20">
@@ -983,24 +1062,32 @@ const handleDownloadZip = async () => {
                   </>
                 )}
               </Button>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button 
                   onClick={() => {
                     navigator.clipboard.writeText(arabicCode);
                     toast({ title: 'تم النسخ', description: 'تم نسخ النص العربي.' });
                   }}
                   variant="outline"
-                  className="w-full"
+                  className="w-full text-xs"
                 >
                   نسخ المكتوب
                 </Button>
                 <Button 
-                  onClick={handleDownloadZip}
+                  onClick={() => openDownloadDialog('code')}
                   variant="outline"
-                  className="w-full gap-2"
+                  className="w-full gap-1 text-xs"
                 >
-                  <Download className="h-4 w-4" />
-                  تحميل ZIP
+                  <FileCode className="h-3 w-3" />
+                  ZIP كود فقط
+                </Button>
+                <Button 
+                  onClick={() => openDownloadDialog('code-with-errors')}
+                  variant="outline"
+                  className="w-full gap-1 text-xs"
+                >
+                  <Download className="h-3 w-3" />
+                  ZIP كود + أخطاء
                 </Button>
               </div>
             </div>
