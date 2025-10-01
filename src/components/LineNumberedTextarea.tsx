@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useMemo, useEffect } from "react";
+import React, { forwardRef, useCallback, useMemo } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
@@ -40,42 +40,6 @@ const LineNumberedTextarea = forwardRef<
       return Math.max(1, value.split('\n').length);
     }, [value]);
 
-    // Auto-scroll to cursor position when typing
-    useEffect(() => {
-      if (!ref || typeof ref === 'function') return;
-      
-      const textarea = ref.current;
-      if (!textarea) return;
-
-      const handleScroll = () => {
-        const { selectionStart, scrollLeft, clientWidth } = textarea;
-        const text = textarea.value.substring(0, selectionStart);
-        const lastLineBreak = text.lastIndexOf('\n');
-        const currentLine = text.substring(lastLineBreak + 1);
-        
-        // Approximate cursor position (works for monospace fonts)
-        const charWidth = 8.4; // Approximate width of a character in mono font
-        const cursorPosition = currentLine.length * charWidth;
-        
-        // Scroll if cursor is near the edges
-        if (cursorPosition > scrollLeft + clientWidth - 50) {
-          textarea.scrollLeft = cursorPosition - clientWidth + 100;
-        } else if (cursorPosition < scrollLeft + 50) {
-          textarea.scrollLeft = Math.max(0, cursorPosition - 100);
-        }
-      };
-
-      textarea.addEventListener('input', handleScroll);
-      textarea.addEventListener('click', handleScroll);
-      textarea.addEventListener('keyup', handleScroll);
-
-      return () => {
-        textarea.removeEventListener('input', handleScroll);
-        textarea.removeEventListener('click', handleScroll);
-        textarea.removeEventListener('keyup', handleScroll);
-      };
-    }, [ref]);
-
     const lineNumbers = useMemo(() => {
       return Array.from({ length: lineCount }, (_, i) => i + 1);
     }, [lineCount]);
@@ -103,12 +67,12 @@ const LineNumberedTextarea = forwardRef<
         </div>
 
         {/* Text area container */}
-        <div className={cn("flex-1 relative overflow-x-auto", isRtl && "order-1")}>
+        <div className={cn("flex-1 relative", isRtl && "order-1")}>
           {/* Overlay for highlighting errors (Arabic side only) */}
           {overlayContent && (
             <div
               ref={overlayRef}
-              className="absolute inset-0 z-10 whitespace-pre font-mono text-sm leading-6 px-3 py-2 pointer-events-none overflow-x-auto"
+              className="absolute inset-0 z-10 whitespace-pre-wrap font-mono text-sm leading-6 px-3 py-2 pointer-events-none"
               dir={dir}
               dangerouslySetInnerHTML={{ __html: overlayContent }}
               onClick={onOverlayClick}
@@ -121,7 +85,7 @@ const LineNumberedTextarea = forwardRef<
             onChange={onChange}
             placeholder={placeholder}
             className={cn(
-              "min-h-[500px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0 whitespace-pre overflow-x-auto",
+              "min-h-[500px] font-mono text-sm leading-6 border-0 resize-none focus:ring-0 focus:ring-offset-0",
               overlayContent &&
                 "text-transparent caret-transparent bg-transparent",
               className,
